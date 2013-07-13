@@ -18,83 +18,29 @@ TO DO:
 %}
 
 
-
-
-
-%{
-function Display_Press(~,event)
-    if event.Character == 's'
-        figure(1);
-        plot(sodium');
-        title('Sodium vs Time');
-    end
-    if event.Character == 'p'
-        figure(1);
-        plot(potass');
-        title('Potassium vs Time');
-    end
-    if event.Character == 'n'
-        figure(1);
-        plot(nmda');
-        title('NMDA vs Time');
-    end
-    if event.Character == 'a'
-        figure(1);
-        plot(ampa');
-        title('AMPA vs Time');
-    end
-    if event.Character == 'x'
-        figure(1);
-        plot(axial');
-        title('Axial vs Time');
-    end
-    if event.Character == 'v'
-        figure(1);
-        plot(volt');
-        title('Millivolts vs Time');
-    end
-    if event.Character == 'q'
-        continued=false;
-    end
-    if event.Character == '-'
-        steps=steps-1;
-    end
-    if event.Character == '='
-        steps=steps+1;
-    end
-    if event.Character ==' '
-        if pauser==1
-            pauser=0;
-        else
-            pauser=1;
-        end
-    end
-       set(0,'CurrentFigure', figure(3));
-end
-%}
-
+%Initializing
 pause on;
 close all;
 scrsz = get(0,'ScreenSize');
-
-%Figure 1 - Axial/Diameter/Volt - Middle
-
-
 startbarsize=45;
+Filename='BardiaSimulation.mat';
+Title=strcat('DendV5 -  {',Filename,'}');
 
+%Loads matrix data file
+Datafile= load(Filename);
+
+%Main Figure Window
 figure('Position', [0 startbarsize scrsz(3) scrsz(4)*.92],...
-    'Toolbar', 'none');
+    'Toolbar', 'none',...
+    'Name',Title,...
+    'NumberTitle','off');
 set(gcf,'Units','normal')
 set(gca,'Position',[0 0 1 1])
+
+%Load Frame
 text(.46,.5,'Loading...', 'FontSize', 25);
 
-
-%Get Variables from file
-%BardiaSimulation.mat
-%onetrace.mat
-
-Datafile= load('BardiaSimulation.mat');
-
+%initializing
 global sodium;
 global potass;
 global nmda;
@@ -129,31 +75,19 @@ AbsCap= abs(cap +eps);
 AbsPas=abs(pas+eps);
 
 
-set(0,'CurrentFigure',figure(1) );
-
 %General Settings
+set(0,'CurrentFigure',figure(1) );
 [~,maxtime]=size(ampa);
 [maxcompart,~]=size(potass);
 continued=true;
 steps=1;                     %Temporal jump per loop
-Time=980;                   %Start time
-pauser=0;                    %Set to 1 to disable bar chart, 0 to enable
+Time=800;                      %Start time
+pauser=0;                      %Set to 1 to disable bar chart, 0 to enable
 LegendSpace=.10;
 LegendStart=1-LegendSpace;
 SpaceConstant=1/maxcompart *(LegendStart);  %Width of one compartment
-Cushion=.025;
+Cushion=.025;                               %Vertical space between graphs 
 
-
-
-%Box chart settings
-DifftoZero=min(ceil(volt(:)));                     %Takes smallest value in volt
-VoltRange= abs( max(ceil(volt(:))) - DifftoZero);  %Range of Volt; works {++,+-,-+,--}
-boxcolormap=colormap(jet(VoltRange));              %Sets range-based Jet colormap
-AxialScaler=(.9*SpaceConstant)/max(abs(axial(:))); %Multiplies with axial current to fit in compartment
-LineY2=.505;                                       %Midpoint of Box chart
-BoxScaler=1/max(diam) * (.33 - 2*Cushion);           %*(.33) for scale to 1/3 of figure
-BoxMaxLine=LineY2+ .165- Cushion;
-BoxMinLine=LineY2- .165+ Cushion;
 
 
 %Bar chart settings
@@ -165,6 +99,23 @@ LineY1=.835;                            %Midline location
 MaxBar=.165 - Cushion;                  %Maximum allowed size for bar
 BarMaxLine= LineY1 + .165 - Cushion;
 BarMinLine= LineY1 - .165 + Cushion;
+SodiumColor=   [1 0 0];    %[R G B]
+PotassiumColor=[1 .9 0];
+AMPAColor=     [0 1 1];
+NMDAColor=     [.8 .5 .5];
+CapColor=      [0 0 1];
+PasColor=      [0 1 0];
+
+
+%Box chart settings
+DifftoZero=min(ceil(volt(:)));                     %Takes smallest value in volt
+VoltRange= abs( max(ceil(volt(:))) - DifftoZero);  %Range of Volt; works {++,+-,-+,--}
+boxcolormap=colormap(jet(VoltRange));              %Sets range-based Jet colormap
+AxialScaler=(.9*SpaceConstant)/max(abs(axial(:))); %Multiplies with axial current to fit in compartment
+LineY2=.505;                                       %Midpoint of Box chart
+BoxScaler=1/max(diam) * (.33 - 2*Cushion);         %*(.33) for scale to 1/3 of figure
+BoxMaxLine=LineY2+ .165- Cushion;
+BoxMinLine=LineY2- .165+ Cushion;
 
 
 %Line chart settings
@@ -174,16 +125,6 @@ LineMaxLine=LineChartMidY +.165 - Cushion;
 LineMinLine=LineChartMidY -.165 + Cushion;
 
 clf;
-
-str3 =['STEP: ', num2str(steps/10), 'ms'];
-StepDisplay=annotation('textbox', [.8 .97 .07 .03],...
-                       'String', str3,...
-                       'LineStyle', 'none'); %position [fromleft frombottom width height]
-str2=['TIME: ', num2str(Time/10),'ms'];
-TimeDisplay=annotation('textbox', [.7 .97 .07 .03],...
-                       'String', str2,...
-                       'LineStyle', 'none');
-
 
 %Spacing for arrows
 LineX1 =BaseLineX1;
@@ -196,6 +137,18 @@ NMDAX=1:1:maxcompart;
 CapX=1:1:maxcompart;
 PasX=1:1:maxcompart;
 
+%Time/Step-size
+str3 =['STEP: ', num2str(steps/10), 'ms'];
+StepDisplay=annotation('textbox', [.8 .97 .07 .03],...
+                       'String', str3,...
+                       'LineStyle', 'none'); %position [fromleft frombottom width height]
+str2=['TIME: ', num2str(Time/10),'ms'];
+TimeDisplay=annotation('textbox', [.7 .97 .07 .03],...
+                       'String', str2,...
+                       'LineStyle', 'none');
+
+
+
 %Legend display
 annotation('line', [(LegendStart) (LegendStart)], [BarMaxLine BarMinLine]);
 annotation('line', [(LegendStart) (LegendStart)], [BoxMaxLine BoxMinLine]);
@@ -203,14 +156,16 @@ annotation('line', [(LegendStart) (LegendStart)], [LineMaxLine LineMinLine]);
 
 
 annotation('line', [0 LegendStart], [BarMaxLine BarMaxLine]);
-BarMaxStr=[num2str(steps/10), 'ms'];
+
+
+BarMaxStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarMult), ' mV'];
 annotation('textbox',[LegendStart, BarMaxLine-.5*Cushion, .05, .05],... %-.5*Cushion for ideal alignment
            'String', BarMaxStr,...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom');
 
 annotation('line', [0 LegendStart], [BarMinLine BarMinLine]);
-BarMinStr=[num2str(steps/10), 'ms']; 
+BarMinStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarMult*-1), ' mV']; 
 annotation('textbox',[LegendStart, BarMinLine-.5*Cushion, .05, .05],...
            'String', BarMinStr,...
            'LineStyle', 'none',...
@@ -218,41 +173,140 @@ annotation('textbox',[LegendStart, BarMinLine-.5*Cushion, .05, .05],...
 
        
 annotation('line', [0 LegendStart], [BoxMaxLine BoxMaxLine]);
-BoxMaxStr=[num2str(steps/10), 'ms']; 
+BoxMaxStr=[num2str(max(diam)), ' µm3']; 
 annotation('textbox',[LegendStart, BoxMaxLine-.5*Cushion, .05, .05],...
            'String', BoxMaxStr,...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom'); 
 
 annotation('line', [0 LegendStart], [BoxMinLine BoxMinLine]);
-BoxMinStr=[num2str(steps/10), 'ms']; 
-annotation('textbox',[LegendStart, BoxMinLine-.5*Cushion, .05, .05],...
+BoxMinStr=['0', ' µm3']; 
+annotation('textbox',[LegendStart, BoxMinLine-.5*Cushion+.01, .05, .05],...
            'String', BoxMinStr,...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom'); 
 
 
 annotation('line', [0 LegendStart], [LineMaxLine LineMaxLine]);
-LineMaxStr=[num2str(steps/10), 'ms']; 
+LineMaxStr=[num2str(max(abs(volt(:)))), ' mV'];
+
 annotation('textbox',[LegendStart, LineMaxLine-.5*Cushion, .05, .05],...
            'String', LineMaxStr,...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom'); 
 
 annotation('line', [0 LegendStart], [LineMinLine LineMinLine]);
-LineMinStr=[num2str(steps/10), 'ms']; 
+LineMinStr=[num2str(max(abs(volt(:)))*-1), ' mV']; 
 annotation('textbox',[LegendStart, LineMinLine-.5*Cushion, .05, .05],...
            'String', LineMinStr,...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom'); 
-
-
        
 annotation('line', [0 LegendStart], [LineChartMidY LineChartMidY],...
            'LineStyle', '--'); 
+       
 
+annotation('textbox',[LegendStart, LineChartMidY-.5*Cushion, .05, .05],...
+           'String', '0 mV',...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom'); 
 
+ %Sodium Legend
+annotation('rectangle', ... #x, y, width, height
+           [LegendStart+.03 LineY1+.08 BarWidth .02],...
+           'FaceColor',SodiumColor,... %R G B
+           'LineWidth', .0005);
+annotation('textbox',[LegendStart+.032, LineY1+.08, .05, .02],...
+           'String', '  Sodium',...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom'); 
+       
+       
+%Potassium Legend       
+annotation('rectangle', ... #x, y, width, height
+           [LegendStart+.03 LineY1+.05 BarWidth .02],...
+           'FaceColor',PotassiumColor,... %R G B
+           'LineWidth', .0005);
+       annotation('textbox',[LegendStart+.032, LineY1+.05, .05, .02],...
+           'String', '  Potassium',...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom'); 
+       
+%AMPA Legend
+annotation('rectangle', ... #x, y, width, height
+           [LegendStart+.03 LineY1+.020 BarWidth .02],...
+           'FaceColor',AMPAColor,... %R G B
+           'LineWidth', .0005);
+annotation('textbox',[LegendStart+.032, LineY1+.02, .05, .02],...
+           'String', '  AMPA',...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom'); 
+       
+%NMDA Legend       
+annotation('rectangle', ... #x, y, width, height
+           [LegendStart+.03 LineY1-.01 BarWidth .02],...
+           'FaceColor',NMDAColor,... %R G B
+           'LineWidth', .0005);
+annotation('textbox',[LegendStart+.032, LineY1-.01, .05, .02],...
+           'String', '  NMDA',...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom'); 
+       
+%Capacitive Legend
+annotation('rectangle', ... #x, y, width, height
+           [LegendStart+.03 LineY1-.04 BarWidth .02],...
+           'FaceColor',CapColor,... %R G B
+           'LineWidth', .0005);
+annotation('textbox',[LegendStart+.032, LineY1-.04, .05, .02],...
+           'String', '  Capacitive',...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom'); 
+       
+%Passive Legend       
+annotation('rectangle', ... #x, y, width, height
+           [LegendStart+.03 LineY1-.07 BarWidth .02],...
+           'FaceColor',PasColor,... %R G B
+           'LineWidth', .0005);
+annotation('textbox',[LegendStart+.032, LineY1-.07, .05, .02],...
+           'String', '  Passive',...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom');     
+       
+       
+%more legend       
+annotation('textarrow', [LegendStart+.01 LegendStart+.01], [LineY1+.04 LineY1+.08],...
+           'String' , 'Out')       
+       
+annotation('textarrow', [LegendStart+.01 LegendStart+.01], [LineY1-.04 LineY1-.08],...
+           'String' , 'In')       
+    
+       
+annotation('textbox',[0 BoxMinLine-.03 .1 .03],...
+           'String', strcat(num2str(min(distance)), ' µm (from soma)'),...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom');
+annotation('textbox',[LegendStart-.02 BoxMinLine-.03 .06 .03],...
+           'String', strcat(num2str(max(distance)), ' µm (from soma)'),...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom');
+       
+annotation('textarrow', [.4 .5], [BoxMinLine-.02 BoxMinLine-.02],...
+           'String' , 'Distal')   
 
+annotation('line', [LegendStart+.03 LegendStart+.03],[LineY2+.035 LineY2-.045])
+annotation('rectangle',...
+        [LegendStart+.03 .49 .9*SpaceConstant .02],...    %Draws
+        'LineWidth', .0001, ...
+        'FaceColor', [.2 .1 .1]);
+    %max(abs(axial(:)))
+annotation('textbox',[LegendStart+.015+.9*SpaceConstant LineY2-.05 .04 .04],...
+           'String', strcat(num2str(max(abs(axial(:)))), ' mV Axial'),...
+           'LineStyle', 'none',...
+           'VerticalAlignment', 'bottom');
+       
+annotation('textarrow', [LegendStart+.035 LegendStart+.035], [.12 .22],...
+           'String', 'Voltage');
+       
 %Setting up display
 for arrowloop=1:maxcompart
 BoxX(arrowloop)=SpaceConstant*arrowloop-SpaceConstant;
@@ -271,7 +325,7 @@ for arrowloop=1:maxcompart
     SodiumBarSize=min(MaxBar, BarMult*AbsNa(arrowloop, Time));
     SodiumBar(arrowloop)=annotation('rectangle', ... #x, y, width, height
         [BarX LineY1-SodiumBarSize BarWidth SodiumBarSize],...
-        'FaceColor',[1 0 0],... %R G B
+        'FaceColor',SodiumColor,... %R G B
         'LineWidth', .0005);
     SodiumX(arrowloop)= BarX;
     BarX=BarX+BarWidth;    %Set next bar
@@ -280,7 +334,7 @@ for arrowloop=1:maxcompart
     PotassiumBarSize=min(MaxBar, BarMult*AbsK(arrowloop, Time));
     PotassiumBar(arrowloop)=annotation('rectangle',...
         [BarX LineY1-.0005 BarWidth PotassiumBarSize],...
-        'FaceColor',[1 .9 0],...    
+        'FaceColor',PotassiumColor,...    
         'LineWidth', .0005);
     PotassiumX(arrowloop)= BarX;
     BarX=BarX+BarWidth;
@@ -291,7 +345,7 @@ for arrowloop=1:maxcompart
     AMPABarSize=min(MaxBar, BarMult*AbsAMPA(arrowloop, Time));
     AMPABar(arrowloop)=annotation('rectangle',...
         [BarX LineY1-AMPABarSize BarWidth  AMPABarSize],...
-        'FaceColor',[1 0 1],...
+        'FaceColor',AMPAColor,...
         'LineWidth', .0005);
     
     AMPAX(arrowloop)= BarX;
@@ -303,7 +357,7 @@ for arrowloop=1:maxcompart
     NMDABarSize=min(MaxBar, BarMult*AbsNMDA(arrowloop, Time));
     NMDABar(arrowloop)=annotation('rectangle',...
         [BarX LineY1-NMDABarSize BarWidth NMDABarSize],...
-        'FaceColor',[.5 .5 .1],...
+        'FaceColor',NMDAColor,...
         'LineWidth', .0005);
     
     NMDAX(arrowloop)= BarX;
@@ -316,13 +370,13 @@ for arrowloop=1:maxcompart
         
         CapBar(arrowloop)=annotation('rectangle',...
             [BarX LineY1-.0005 BarWidth CapBarSize],...
-            'FaceColor',[0 1 0],...
+            'FaceColor',CapColor,...
             'LineWidth', .0005);
         
     else
         CapBar(arrowloop)=annotation('rectangle',...
             [BarX LineY1-CapBarSize BarWidth CapBarSize],...
-            'FaceColor',[0 1 0],...
+            'FaceColor',CapColor,...
             'LineWidth', .0005);
     end
     CapX(arrowloop)= BarX;
@@ -332,13 +386,15 @@ for arrowloop=1:maxcompart
     PasBarSize=min(MaxBar, BarMult*AbsPas(arrowloop, Time));
     PasBar(arrowloop)=annotation('rectangle',...
         [BarX LineY1-.0005 BarWidth PasBarSize],...
-        'FaceColor',[0 0 1],...
+        'FaceColor',PasColor,...
         'LineWidth', .0005);
     PasX(arrowloop)=BarX;
     
     
     %Move to next compartment
-
+    LineX1 =LineX1 + SpaceConstant;
+    LineX2 =LineX2 + SpaceConstant;
+    BarX=LineX1;
     
     
  %Box Chart
@@ -353,33 +409,27 @@ for arrowloop=1:maxcompart
     
     
     %Axial current
-    AxialBarSize=AxialScaler*axial(arrowloop,Time);
-    AxialX2=max(.000001,min(.99, -1*AxialBarSize)); % *-1 to correct axial directions
+    ScaledArrowX= AxialScaler*axial(arrowloop,Time); %Sets range to -1 to 1
+    ArrowX2=max(.001,min(1, -1*ScaledArrowX)); % *-1 to correct axial directions
+    
+    AxialBox(arrowloop)=annotation('rectangle',...
+        [BoxX(arrowloop) .49 ArrowX2 .02],...    %Draws
+        'LineWidth', .0001, ...
+        'FaceColor', [.2 .1 .1]);
 
-    AxialBar(arrowloop)=annotation('rectangle',...
-        [BoxX(arrowloop) .49 AxialX2 .02],...
-        'FaceColor',[.5 .1 .1],...
-        'LineWidth', .0005);
-    
-    
-    
-    
     
  %Line Chart
     VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop) (BoxX(arrowloop)+SpaceConstant)], [.2 .2],...
                 'Color', [.5 .2 1],...
                 'LineWidth', 2);
         
-    LineX1 =LineX1 + SpaceConstant;
-    LineX2 =LineX2 + SpaceConstant;
-    BarX=LineX1;
     
 end
 
 
 %-------------Main Display Loop-----------------%
 while Time<maxtime && continued==true    
-    
+    tic
  %   set(0,'CurrentFigure',figure(1) );
     
     str3=['STEP: ',num2str(steps/10),'ms'];
@@ -432,17 +482,18 @@ while Time<maxtime && continued==true
         set(DiamBar(arrowloop),'FaceColor',BarColor);
 
         ScaledArrowX= AxialScaler*axial(arrowloop,Time);  %Sets range to -1 to 1
+        ArrowX2=abs(min(1, -1*ScaledArrowX)); % *-1 to correct axial directions
         
-        
-        AxialX2=max(.0001,min(1, -1*ScaledArrowX)); % *-1 to correct axial directions
-        
-        if(axial(arrowloop,Time)>0)
-            AxialBarPosition= [BoxX(arrowloop) .49 AxialX2 .02];
+        if(axial(arrowloop,Time)<0)
+            AxialBoxPosition=[BoxX(arrowloop) .49 ArrowX2 .02];
         else
-            AxialBarPosition= [BoxX(arrowloop)-AxialX2 .49 AxialX2 .02];
+            AxialBoxPosition=[BoxX(arrowloop)-ArrowX2 .49 ArrowX2 .02];
         end
-        set(AxialBar(arrowloop),'Position', AxialBarPosition);
+        
+        set(AxialBox(arrowloop),'Position', AxialBoxPosition);
+ 
 
+        
         
         %Voltage Line
         VLY1=VoltScaler*volt(arrowloop,Time);
@@ -452,11 +503,9 @@ while Time<maxtime && continued==true
         set(VoltLine(arrowloop),'Y', VoltLineY);
         
         
-
-        
-        
         
     end
+    
     
     
    % set(0,'CurrentFigure',figure(1) );
@@ -464,8 +513,10 @@ while Time<maxtime && continued==true
     %MovieFrames(Time)=getframe;
     
     drawnow;
-    pause(.035); %Pause between switching frames
-    
+    loopspeed=toc;
+    if (loopspeed<.2)
+    pause(.2-loopspeed); %Pause between switching frames
+    end
     
     Time = Time + steps; %Update time loop
     
