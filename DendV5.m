@@ -338,9 +338,7 @@ for arrowloop=1:maxcompart
     
     
     %Move to next compartment
-    LineX1 =LineX1 + SpaceConstant;
-    LineX2 =LineX2 + SpaceConstant;
-    BarX=LineX1;
+
     
     
  %Box Chart
@@ -355,12 +353,16 @@ for arrowloop=1:maxcompart
     
     
     %Axial current
-    ScaledArrowX= AxialScaler*axial(arrowloop,Time); %Sets range to -1 to 1
-    ArrowX2=max(.001,min(1, BoxX + -1*ScaledArrowX)); % *-1 to correct axial directions
+    AxialBarSize=AxialScaler*axial(arrowloop,Time);
+    AxialX2=max(.000001,min(.99, -1*AxialBarSize)); % *-1 to correct axial directions
+
+    AxialBar(arrowloop)=annotation('rectangle',...
+        [BoxX(arrowloop) .49 AxialX2 .02],...
+        'FaceColor',[.5 .1 .1],...
+        'LineWidth', .0005);
     
-    AxialLine(arrowloop)=annotation('line',[BoxX(arrowloop) ArrowX2(arrowloop)], [.5 .5],...    %Draws
-        'LineWidth', 13, ...
-        'Color', 'Black');
+    
+    
     
     
  %Line Chart
@@ -368,6 +370,9 @@ for arrowloop=1:maxcompart
                 'Color', [.5 .2 1],...
                 'LineWidth', 2);
         
+    LineX1 =LineX1 + SpaceConstant;
+    LineX2 =LineX2 + SpaceConstant;
+    BarX=LineX1;
     
 end
 
@@ -426,14 +431,18 @@ while Time<maxtime && continued==true
         BarColor=[boxcolormap(ColorNumber,1) boxcolormap(ColorNumber,2) boxcolormap(ColorNumber,3)];
         set(DiamBar(arrowloop),'FaceColor',BarColor);
 
-        BoxX=SpaceConstant*arrowloop-SpaceConstant;
         ScaledArrowX= AxialScaler*axial(arrowloop,Time);  %Sets range to -1 to 1
-        ArrowX2=max(.001,min(1, BoxX + -1*ScaledArrowX)); % *-1 to correct axial directions
-        
-        AxialLineX= [BoxX ArrowX2];
-        %set(AxialLine(arrowloop),'X', AxialLineX);
         
         
+        AxialX2=max(.0001,min(1, -1*ScaledArrowX)); % *-1 to correct axial directions
+        
+        if(axial(arrowloop,Time)>0)
+            AxialBarPosition= [BoxX(arrowloop) .49 AxialX2 .02];
+        else
+            AxialBarPosition= [BoxX(arrowloop)-AxialX2 .49 AxialX2 .02];
+        end
+        set(AxialBar(arrowloop),'Position', AxialBarPosition);
+
         
         %Voltage Line
         VLY1=VoltScaler*volt(arrowloop,Time);
@@ -443,8 +452,6 @@ while Time<maxtime && continued==true
         set(VoltLine(arrowloop),'Y', VoltLineY);
         
         
-        drawnow;
-        
 
         
         
@@ -452,12 +459,11 @@ while Time<maxtime && continued==true
     end
     
     
-    
    % set(0,'CurrentFigure',figure(1) );
     
     %MovieFrames(Time)=getframe;
     
-    
+    drawnow;
     pause(.035); %Pause between switching frames
     
     
