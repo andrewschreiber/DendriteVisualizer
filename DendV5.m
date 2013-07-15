@@ -40,6 +40,8 @@ set(gca,'Position',[0 0 1 1])
 %Load Frame
 text(.46,.5,'Loading...', 'FontSize', 25);
 
+
+
 %initializing
 global sodium;
 global potass;
@@ -94,7 +96,7 @@ Cushion=.025;                               %Vertical space between graphs
 BaseLineX1=.1*SpaceConstant;            %Adjust space between midlines
 BaseLineX2=BaseLineX1+SpaceConstant*.8; %Adjust .1 or .8 to adjust space from left and right, respectively
 BarWidth=SpaceConstant*.8/6;            %6 bars currently **replace with a GetBars
-BarMult=2.5;                            %Manual scalar for barsize
+BarZoom=2.5;                            %Manual scalar for barsize
 LineY1=.835;                            %Midline location
 MaxBar=.165 - Cushion;                  %Maximum allowed size for bar
 BarMaxLine= LineY1 + .165 - Cushion;
@@ -137,6 +139,8 @@ NMDAX=1:1:maxcompart;
 CapX=1:1:maxcompart;
 PasX=1:1:maxcompart;
 
+
+
 %Time/Step-size
 str3 =['STEP: ', num2str(steps/10), 'ms'];
 StepDisplay=annotation('textbox', [.8 .97 .07 .03],...
@@ -158,14 +162,14 @@ annotation('line', [(LegendStart) (LegendStart)], [LineMaxLine LineMinLine]);
 annotation('line', [0 LegendStart], [BarMaxLine BarMaxLine]);
 
 
-BarMaxStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarMult), ' mV'];
+BarMaxStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarZoom), ' mV'];
 annotation('textbox',[LegendStart, BarMaxLine-.5*Cushion, .05, .05],... %-.5*Cushion for ideal alignment
            'String', BarMaxStr,...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom');
 
 annotation('line', [0 LegendStart], [BarMinLine BarMinLine]);
-BarMinStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarMult*-1), ' mV']; 
+BarMinStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarZoom*-1), ' mV']; 
 annotation('textbox',[LegendStart, BarMinLine-.5*Cushion, .05, .05],...
            'String', BarMinStr,...
            'LineStyle', 'none',...
@@ -316,10 +320,13 @@ annotation('textbox',[LegendStart+.015+.9*SpaceConstant LineY2-.05 .04 .04],...
 annotation('textarrow', [LegendStart+.035 LegendStart+.035], [.12 .22],...
            'String', 'Voltage');
        
+       
 %Setting up display
 for arrowloop=1:maxcompart
 BoxX(arrowloop)=SpaceConstant*arrowloop-SpaceConstant;
 end
+
+
 
 for arrowloop=1:maxcompart
     if continued==false
@@ -330,17 +337,20 @@ for arrowloop=1:maxcompart
     %Midlines
     annotation('line', [LineX1 LineX2], [LineY1 LineY1]);
     
+    
     %Sodium
-    SodiumBarSize=min(MaxBar, BarMult*AbsNa(arrowloop, Time));
-    SodiumBar(arrowloop)=annotation('rectangle', ... #x, y, width, height
+    SodiumBarSize=min(MaxBar, BarZoom*AbsNa(arrowloop, Time));
+    SodiumBar(arrowloop)=annotation('rectangle', ... #x, y, width, height ; preallocating makes no speed difference
         [BarX LineY1-SodiumBarSize BarWidth SodiumBarSize],...
         'FaceColor',SodiumColor,... %R G B
         'LineWidth', .0005);
     SodiumX(arrowloop)= BarX;
     BarX=BarX+BarWidth;    %Set next bar
     
+    
+    
     %Potassium current
-    PotassiumBarSize=min(MaxBar, BarMult*AbsK(arrowloop, Time));
+    PotassiumBarSize=min(MaxBar, BarZoom*AbsK(arrowloop, Time));
     PotassiumBar(arrowloop)=annotation('rectangle',...
         [BarX LineY1-.0005 BarWidth PotassiumBarSize],...
         'FaceColor',PotassiumColor,...    
@@ -351,7 +361,7 @@ for arrowloop=1:maxcompart
     
     %AMPA current
     
-    AMPABarSize=min(MaxBar, BarMult*AbsAMPA(arrowloop, Time));
+    AMPABarSize=min(MaxBar, BarZoom*AbsAMPA(arrowloop, Time));
     AMPABar(arrowloop)=annotation('rectangle',...
         [BarX LineY1-AMPABarSize BarWidth  AMPABarSize],...
         'FaceColor',AMPAColor,...
@@ -363,7 +373,7 @@ for arrowloop=1:maxcompart
     %NMDA current
     
     
-    NMDABarSize=min(MaxBar, BarMult*AbsNMDA(arrowloop, Time));
+    NMDABarSize=min(MaxBar, BarZoom*AbsNMDA(arrowloop, Time));
     NMDABar(arrowloop)=annotation('rectangle',...
         [BarX LineY1-NMDABarSize BarWidth NMDABarSize],...
         'FaceColor',NMDAColor,...
@@ -374,7 +384,7 @@ for arrowloop=1:maxcompart
     
     
     %Capacitive current
-    CapBarSize=min(MaxBar, BarMult*AbsCap(arrowloop, Time));
+    CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, Time));
     if cap(arrowloop, Time)>0
         
         CapBar(arrowloop)=annotation('rectangle',...
@@ -392,7 +402,7 @@ for arrowloop=1:maxcompart
     BarX= BarX + BarWidth;
     
     %Passive current here
-    PasBarSize=min(MaxBar, BarMult*AbsPas(arrowloop, Time));
+    PasBarSize=min(MaxBar, BarZoom*AbsPas(arrowloop, Time));
     PasBar(arrowloop)=annotation('rectangle',...
         [BarX LineY1-.0005 BarWidth PasBarSize],...
         'FaceColor',PasColor,...
@@ -432,13 +442,12 @@ for arrowloop=1:maxcompart
                 'Color', [.5 .2 1],...
                 'LineWidth', 2);
         
-    
-end
 
+end
 
 %-------------Main Display Loop-----------------%
 while Time<maxtime && continued==true    
-    tic
+    tic %to smooth
  %   set(0,'CurrentFigure',figure(1) );
     
     str3=['STEP: ',num2str(steps/10),'ms'];
@@ -449,38 +458,38 @@ while Time<maxtime && continued==true
     
     for arrowloop=1:maxcompart
         
-        SodiumBarSize=min(MaxBar, BarMult*AbsNa(arrowloop, Time));
+        SodiumBarSize=min(MaxBar, BarZoom*AbsNa(arrowloop, Time));
         SodiumBarPos=[SodiumX(arrowloop) LineY1-SodiumBarSize BarWidth SodiumBarSize];
         set(SodiumBar(arrowloop),'Position', SodiumBarPos);
         
-        PotassiumBarSize=min(MaxBar, BarMult*AbsK(arrowloop, Time));
+        PotassiumBarSize=min(MaxBar, BarZoom*AbsK(arrowloop, Time));
         PotassiumBarPos=[PotassiumX(arrowloop) LineY1-.0005 BarWidth PotassiumBarSize];
         set(PotassiumBar(arrowloop),'Position', PotassiumBarPos);
         
-        AMPABarSize=min(MaxBar, BarMult*AbsAMPA(arrowloop, Time));
+        AMPABarSize=min(MaxBar, BarZoom*AbsAMPA(arrowloop, Time));
         AMPABarPos=[AMPAX(arrowloop) LineY1-AMPABarSize BarWidth AMPABarSize];
         set(AMPABar(arrowloop),'Position', AMPABarPos);
         
         
-        NMDABarSize=min(MaxBar, BarMult*AbsNMDA(arrowloop, Time));
+        NMDABarSize=min(MaxBar, BarZoom*AbsNMDA(arrowloop, Time));
         NMDABarPos=[NMDAX(arrowloop) LineY1-NMDABarSize BarWidth NMDABarSize];
         set(NMDABar(arrowloop),'Position', NMDABarPos);
         
         
         if cap(arrowloop, Time)>0
             
-            CapBarSize=min(MaxBar, BarMult*AbsCap(arrowloop, Time));
+            CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, Time));
             CapBarPos=[CapX(arrowloop) LineY1-.0005 BarWidth CapBarSize];
             set(CapBar(arrowloop),'Position', CapBarPos);
             
         else
             
-            CapBarSize=min(MaxBar, BarMult*AbsCap(arrowloop, Time));
+            CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, Time));
             CapBarPos=[CapX(arrowloop) LineY1-CapBarSize BarWidth CapBarSize];
             set(CapBar(arrowloop),'Position', CapBarPos);
         end
         
-        PasBarSize=min(MaxBar, BarMult*AbsPas(arrowloop, Time));
+        PasBarSize=min(MaxBar, BarZoom*AbsPas(arrowloop, Time));
         PasBarPos=[PasX(arrowloop) LineY1-.0005 BarWidth PasBarSize];
         set(PasBar(arrowloop),'Position', PasBarPos);
         
@@ -523,8 +532,8 @@ while Time<maxtime && continued==true
     
     drawnow;
     loopspeed=toc;
-    if (loopspeed<.2)
-    pause(.2-loopspeed); %Pause between switching frames
+    if (loopspeed<.3)
+    pause(.3-loopspeed); %Pause between switching frames
     end
     
     Time = Time + steps; %Update time loop
