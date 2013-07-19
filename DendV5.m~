@@ -10,9 +10,20 @@ function [  ] = DendV5()
 
 %{
 TO DO:
--Utilize number of compartments = size(d)
 -Record as video
+-Increase the size of all legend text
+-Shrink vertical size of dendrite
+-switching capacitive and NMDA colors, so both synaptic currents are blue, and the NMDA gets a more salient color
+-Contextual voltage chart.
+
+
+Later:
+-Make colormap based on absolute values instead of relative
+-Make max of line graph the max of the voltage
 -Set loading screen as intro
+
+
+
 %}
 
 
@@ -81,13 +92,13 @@ set(0,'CurrentFigure',figure(1) );
 [maxcompart,~]=size(potass);
 continued=true;
 steps=1;                     %Temporal jump per loop
-Time=800;                      %Start time
+Time=1000;                      %Start time
 pauser=0;                      %Set to 1 to disable bar chart, 0 to enable
 LegendSpace=.10;
 LegendStart=1-LegendSpace;
 SpaceConstant=1/maxcompart *(LegendStart);  %Width of one compartment
 Cushion=.025;                               %Vertical space between graphs 
-
+recordmovie=true;                           %Records a video into current directory
 
 
 %Bar chart settings
@@ -152,12 +163,21 @@ TimeDisplay=annotation('textbox', [.7 .97 .07 .03],...
 
 
 %Legend display
-annotation('line', [(LegendStart) (LegendStart)], [BarMaxLine BarMinLine]);
-annotation('line', [(LegendStart) (LegendStart)], [BoxMaxLine BoxMinLine]);
-annotation('line', [(LegendStart) (LegendStart)], [LineMaxLine LineMinLine]);
+LegCush=.0025;
+annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [BarMaxLine BarMinLine],...
+            'LineWidth', 5);
+annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [BoxMaxLine BoxMinLine],...
+            'LineWidth', 5);
+annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [LineMaxLine LineMinLine],...
+            'LineWidth', 5);
 
-
-annotation('line', [0 LegendStart], [BarMaxLine BarMaxLine]);
+ %Horizontal lines
+%annotation('line', [0 LegendStart], [BarMaxLine BarMaxLine]);
+%annotation('line', [0 LegendStart], [BarMinLine BarMinLine]);
+%annotation('line', [0 LegendStart], [BoxMaxLine BoxMaxLine]);
+%annotation('line', [0 LegendStart], [BoxMinLine BoxMinLine]);
+%annotation('line', [0 LegendStart], [LineMaxLine LineMaxLine]);
+%annotation('line', [0 LegendStart], [LineMinLine LineMinLine]);
 
 
 BarMaxStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarZoom), ' mV'];
@@ -165,8 +185,8 @@ annotation('textbox',[LegendStart, BarMaxLine-.5*Cushion, .05, .05],... %-.5*Cus
            'String', BarMaxStr,...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom');
+           
 
-annotation('line', [0 LegendStart], [BarMinLine BarMinLine]);
 BarMinStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarZoom*-1), ' mV']; 
 annotation('textbox',[LegendStart, BarMinLine-.5*Cushion, .05, .05],...
            'String', BarMinStr,...
@@ -174,14 +194,12 @@ annotation('textbox',[LegendStart, BarMinLine-.5*Cushion, .05, .05],...
            'VerticalAlignment', 'bottom'); 
 
        
-annotation('line', [0 LegendStart], [BoxMaxLine BoxMaxLine]);
 BoxMaxStr=[num2str(max(diam)), ' µm3']; 
 annotation('textbox',[LegendStart, BoxMaxLine-.5*Cushion, .05, .05],...
            'String', BoxMaxStr,...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom'); 
 
-annotation('line', [0 LegendStart], [BoxMinLine BoxMinLine]);
 BoxMinStr=['0', ' µm3']; 
 annotation('textbox',[LegendStart, BoxMinLine-.5*Cushion+.01, .05, .05],...
            'String', BoxMinStr,...
@@ -189,7 +207,6 @@ annotation('textbox',[LegendStart, BoxMinLine-.5*Cushion+.01, .05, .05],...
            'VerticalAlignment', 'bottom'); 
 
 
-annotation('line', [0 LegendStart], [LineMaxLine LineMaxLine]);
 LineMaxStr=[num2str(max(abs(volt(:)))), ' mV'];
 
 annotation('textbox',[LegendStart, LineMaxLine-.5*Cushion, .05, .05],...
@@ -197,7 +214,6 @@ annotation('textbox',[LegendStart, LineMaxLine-.5*Cushion, .05, .05],...
            'LineStyle', 'none',...
            'VerticalAlignment', 'bottom'); 
 
-annotation('line', [0 LegendStart], [LineMinLine LineMinLine]);
 LineMinStr=[num2str(max(abs(volt(:)))*-1), ' mV']; 
 annotation('textbox',[LegendStart, LineMinLine-.5*Cushion, .05, .05],...
            'String', LineMinStr,...
@@ -326,6 +342,7 @@ end
 
 
 
+
 for arrowloop=1:maxcompart
     if continued==false
         break;
@@ -422,7 +439,8 @@ for arrowloop=1:maxcompart
     BarColor=[boxcolormap(ColorNumber,1) boxcolormap(ColorNumber,2) boxcolormap(ColorNumber,3)];
     
     DiamBar(arrowloop)=annotation('rectangle',[BoxX(arrowloop) BoxFromBot SpaceConstant BoxSize],...
-        'FaceColor', BarColor); %fromleft frombottom width height
+        'FaceColor', BarColor,...
+        'EdgeColor', 'none'); %fromleft frombottom width height
     
     
     %Axial current
@@ -431,7 +449,7 @@ for arrowloop=1:maxcompart
     
     AxialBox(arrowloop)=annotation('rectangle',...
         [BoxX(arrowloop) .49 ArrowX2 .02],...    %Draws
-        'LineWidth', .0001, ...
+        'EdgeColor', 'none', ...
         'FaceColor', [.2 .1 .1]);
 
     
@@ -443,8 +461,16 @@ for arrowloop=1:maxcompart
 
 end
 
+
+if recordmovie==true
+  writerObj= VideoWriter(strcat(Filename, '_movie.avi'));
+  writerObj.FrameRate=10;
+   open(writerObj);
+end
+
+
 %-------------Main Display Loop-----------------%
-while Time<maxtime && continued==true    
+while Time<1050 && continued==true    
     tic %to smooth
  %   set(0,'CurrentFigure',figure(1) );
     
@@ -529,19 +555,24 @@ while Time<maxtime && continued==true
     %MovieFrames(Time)=getframe;
     
     drawnow;
+    if recordmovie==true
+     currentframe=getframe(gcf);
+     writeVideo(writerObj, currentframe);
+    end
+    
     loopspeed=toc;
-    if (loopspeed<.3)
+    if (loopspeed<.3 && recordmovie==false)
     pause(.3-loopspeed); %Pause between switching frames
     end
     
     Time = Time + steps; %Update time loop
     
 end %End main loop
+if recordmovie==true
 
-%writerObj = VideoWriter('DendV5Movie');
-%open(writerObj);
-%writeVideo(writerObj,MovieFrames);
-
+   close(writerObj);
+end
+close all;
 end %End Function
 
 
