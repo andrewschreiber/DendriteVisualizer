@@ -521,14 +521,14 @@ end
 
 
 if recordmovie==true
-    writerObj= VideoWriter(strcat(Filename, '_movie.avi'));
+    writerObj= VideoWriter(strcat(Filename, '_movie',date,'.avi'));
     writerObj.FrameRate=10;
     open(writerObj);
 end
 
 
 %-------------Main Display Loop-----------------%
-while Time<1500 && continued==true
+while Time<1010 && continued==true
     tic %to smooth
     %   set(0,'CurrentFigure',figure(1) );
     
