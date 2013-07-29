@@ -93,7 +93,7 @@ LegendSpace=.10;
 LegendStart=1-LegendSpace;
 SpaceConstant=1/maxcompart *(LegendStart);  %Width of one compartment
 Cushion=.015;                               %Vertical space between graphs
-recordmovie=false;                          %Records a video into current directory. Set true/false
+recordmovie=true;                          %Records a video into current directory. Set true/false
 
 
 %Bar chart settings
@@ -101,7 +101,7 @@ BaseLineX1=.1*SpaceConstant;            %Adjust space between bar midlines
 BaseLineX2=BaseLineX1+SpaceConstant*.8; %Adjust .1 or .8 to adjust space from left and right, respectively
 BarWidth=SpaceConstant*.8/6;            %6 bars currently **replace with a GetBars
 BarZoom=5;                              %Manual scalar for barsize
-BarChartMidY=.56;                       %Midline location
+BarChartMidY=.545;                       %Midline location
 MaxBar=.26 - Cushion;                   %Maximum allowed size for bar
 BarMaxLine= BarChartMidY + .26 - Cushion;
 BarMinLine= BarChartMidY - .26 + Cushion;
@@ -170,6 +170,9 @@ annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [BarMaxLine Bo
     'LineStyle', ':');
 annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [BoxMaxLine BoxMinLine],...
     'LineWidth', 5);
+annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [LineMaxLine BarMinLine],...
+    'LineWidth', 2,...
+    'LineStyle', ':');
 annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [LineMaxLine LineMinLine],...
     'LineWidth', 5);
 
@@ -216,55 +219,18 @@ annotation('textbox',[LegendStart-.065 BoxMaxLine+.01 .1 .05],...
 
 
 %Proximal <-> Distal
-annotation('doublearrow', [.06 .26], [BarMinLine-.03 BarMinLine-.03])
-annotation('textbox',[0 BarMinLine-.04 .04 .04],...
+annotation('doublearrow', [.06 .26], [LineMinLine-.03 LineMinLine-.03])
+annotation('textbox',[0 LineMinLine-.04 .04 .04],...
     'String', 'Proximal',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
-annotation('textbox',[.27 BarMinLine-.04 .04 .04],...
+annotation('textbox',[.27 LineMinLine-.04 .04 .04],...
     'String', 'Distal',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 
 
-LineTitleDisplay=annotation('textbox', [.41 LineMaxLine .3 .2],...
-    'String', 'Mean Contextual Voltage',...
-    'LineStyle', 'none',...
-    'FontSize', .03,...
-    'VerticalAlignment', 'bottom');
-annotation('line', [.4 .6], [LineMaxLine LineMaxLine]);
-
-
-IonChartDusokay=annotation('textbox', [.43 BoxMaxLine .3 .2],...
-    'String', 'Ion Channel Chart',...
-    'LineStyle', 'none',...
-    'FontSize', .03,...
-    'VerticalAlignment', 'bottom');
-
-annotation('line', [.42 .58], [BoxMaxLine BoxMaxLine]);
-
-
-StartVoltTime=['Now'];
-annotation('textbox', [0 0 .2 .2],...
-    'String', StartVoltTime,...
-    'LineStyle', 'none',...
-    'FontSize', .02,...
-    'VerticalAlignment', 'bottom');
-
-MidVoltTime=['+',num2str(LineRange/2), ' ms'];
-annotation('textbox', [LegendStart/2 0 .2 .2],...
-    'String', MidVoltTime,...
-    'LineStyle', 'none',...
-    'FontSize', .02,...
-    'VerticalAlignment', 'bottom');
-
-EndVoltTime=['+',num2str(LineRange), ' ms'];
-annotation('textbox', [LegendStart-.01 0 .2 .2],...
-    'String', EndVoltTime,...
-    'LineStyle', 'none',...
-    'FontSize', .02,...
-    'VerticalAlignment', 'bottom');
 
 
 
@@ -287,8 +253,6 @@ annotation('textbox',[LegendStart+.003, LineMinLine-.5*Cushion-.005, .1, .05],..
 LineZeroMv=(abs(MinVolt)/((abs(MinVolt) + MaxVolt)))*(LineMaxLine-LineMinLine)+LineMinLine;
 annotation('line', [0 LegendStart], [LineZeroMv LineZeroMv],...
     'LineStyle', '--');
-
-
 annotation('textbox',[LegendStart+.003, LineZeroMv-.01, .1, .05],...
     'String', '0 mV',...
     'LineStyle', 'none',...
@@ -384,8 +348,8 @@ annotation('textbox',[.75 .975 .05 .04],...
 
 
 %Line Chart - Voltage string
-%annotation('textarrow', [LegendStart+.05 LegendStart+.05], [.12 .22],...
-%    'String', 'Voltage');
+annotation('textarrow', [LegendStart+.05 LegendStart+.05], [.12 .22],...
+    'String', 'Voltage');
 
 
 %Setting up display
@@ -504,20 +468,27 @@ for arrowloop=1:maxcompart
         'FaceColor', [.2 .1 .1]);
     
     
+ %Line Chart
+    VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop) (BoxX(arrowloop)+SpaceConstant)], [.2 .2],...
+                'Color', [.5 .2 1],...
+                'LineWidth', 2);
+        
+    
+    
     %Vertical dotted lines
-    annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [BoxFromBot BarMinLine], ...
+    annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [BoxFromBot BoxMinLine], ...
                'LineStyle', ':',...
                'LineWidth', .1);
-      
+    
+    annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [BarMaxLine BarMinLine], ...
+               'LineStyle', ':',...
+               'LineWidth', .1);       
+    
+    annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [LineMaxLine LineMinLine], ...
+               'LineStyle', ':',...
+               'LineWidth', .1);  
 end
 
-for lineloop=1:LineRange
-
-    %Line Chart
-    VoltLine(lineloop)=annotation('line', [((lineloop*(1/LineRange))-(1/LineRange))*LegendStart (lineloop*(1/LineRange))*LegendStart], [.2 .2],...
-        'Color', [.5 .2 1],...
-        'LineWidth', 2);
-end
 
 
 if recordmovie==true
@@ -528,7 +499,7 @@ end
 
 
 %-------------Main Display Loop-----------------%
-while Time<1010 && continued==true
+while Time<1500 && continued==true
     tic %to smooth
     %   set(0,'CurrentFigure',figure(1) );
     
@@ -592,24 +563,18 @@ while Time<1010 && continued==true
         
         set(AxialBox(arrowloop),'Position', AxialBoxPosition);
         
+        VLY1=VoltScaler*volt(arrowloop,Time);
+        VLY2=VoltScaler*volt(arrowloop+1,Time);
+        VoltLineY= [(VLY1+LineChartMidY) (VLY2+LineChartMidY)];
         
+        set(VoltLine(arrowloop),'Y', VoltLineY);
         
         
         
         
     end
     
-    for lineloop=1:LineRange
-        
-        %X(lineloop*(1/LineRange))-(1/LineRange) lineloop*(1/LineRange)
-        %Voltage Line
-        
-        VLY1=VoltScaler*VoltMean(Time+lineloop);
-        VLY2=VoltScaler*VoltMean(Time+lineloop+1);
-        VoltLineY= [(VLY1+LineChartMidY) (VLY2+LineChartMidY)];
-        
-        set(VoltLine(lineloop),'Y', VoltLineY);
-    end
+ 
     
     
     % set(0,'CurrentFigure',figure(1) );
