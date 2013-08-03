@@ -88,13 +88,15 @@ set(0,'CurrentFigure',figure(1) );
 [maxcompart,~]=size(potass);
 continued=true;
 steps=1;                       %Temporal jump per loop
-Time=1000;                     %Start time
+StartTime=1000;
+CurrentTime=StartTime;                     %Start time
+EndTime=1400;
 pauser=0;                      %Set to 1 to disable bar chart, 0 to enable
-LegendSpace=.5;
+LegendSpace=.45;
 LegendStart=1-LegendSpace;
 SpaceConstant=1/maxcompart *(LegendStart);  %Width of one compartment
 Cushion=.015;                               %Vertical space between graphs
-recordmovie=false;                          %Records a video into current directory. Set true/false
+recordmovie=true;                          %Records a video into current directory. Set true/false
 
 
 %Bar chart settings
@@ -106,7 +108,7 @@ BarChartMidY=.26;                       %Midline location
 MaxBar=.26 - Cushion;                   %Maximum allowed size for bar
 BarMaxLine= BarChartMidY + .26 - Cushion;
 BarMinLine= BarChartMidY - .26 + Cushion;
-SodiumColor=   [1 0 0];    %[R G B]
+SodiumColor=   [1 0 0];    
 PotassiumColor=[1 .9 0];
 AMPAColor=     [0 1 1];
 NMDAColor=     [0 0 1];
@@ -144,19 +146,24 @@ voltI=volt';
 
 
 %Contextual Voltage charts
-PlotWidth=.375;
+PlotWidth=.33;
 PlotHeight=.45;
-PlotX=.62;
+PlotX=.665;
 SomaPlotY=.5;
 SelectedPlotY=.02;
+PlotLineXScalar= PlotWidth/(EndTime-StartTime);
+
 
 SomaPlot=axes('Position', [PlotX SomaPlotY PlotWidth PlotHeight]);
-Plottest=plot(SomaPlot, voltI(:,1));
+plot(SomaPlot, voltI(StartTime:EndTime,1),'g');
+ylim(SomaPlot,[MinVolt MaxVolt]);
+xlim(SomaPlot,[1 EndTime-StartTime]);
 
 SelectedPlot=axes('Position', [PlotX SelectedPlotY PlotWidth PlotHeight]);
-plot(SelectedPlot, voltI(:,13));
+plot(SelectedPlot, voltI(StartTime:EndTime,13), 'b');
+ylim(SelectedPlot,[MinVolt MaxVolt]);
+xlim(SelectedPlot,[1 EndTime-StartTime]);
 
-axis([SomaPlot SelectedPlot], 'tight');
 
 SomaPlotLine=annotation('line', [PlotX PlotX], [SomaPlotY SomaPlotY+PlotHeight],...
     'LineWidth', .0001);
@@ -164,7 +171,8 @@ SomaPlotLine=annotation('line', [PlotX PlotX], [SomaPlotY SomaPlotY+PlotHeight],
 SelectedPlotLine=annotation('line', [PlotX PlotX], [SelectedPlotY SelectedPlotY+PlotHeight],...
     'LineWidth', .0001);
 
-PlotWidth/
+
+
 
 
 %Spacing for arrows
@@ -180,11 +188,12 @@ PasX=1:1:maxcompart;
 
 
 
-TimeText=['TIME: ', num2str(Time/10),'ms'];
-TimeDisplay=annotation('textbox', [.2 .97 .12 .03],...
+TimeText=['TIME: ', num2str(CurrentTime/10),'ms'];
+TimeDisplay=annotation('textbox', [.4 .975 .2 .03],...
     'String', TimeText,...
     'LineStyle', 'none',...
-    'FontSize', .02);
+    'FontSize', .03,...
+    'HorizontalAlignment', 'center');
 
 
 
@@ -207,21 +216,21 @@ annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [LineMaxLine L
 
 
 %Legend Strings
-BarMaxStr=[num2str((((BarMaxLine-BarMinLine)/2)/BarZoom)), ' mV'];
+BarMaxStr=[num2str(round(100*(((BarMaxLine-BarMinLine)/2)/BarZoom))/100), ' nA'];
 annotation('textbox',[LegendStart+.003, BarMaxLine-.5*Cushion-.01, .1, .05],... %-.5*Cushion for ideal alignment
     'String', BarMaxStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 
-BarMinStr=[num2str((((BarMaxLine-BarMinLine)/2)/BarZoom*-1)), ' mV'];
+BarMinStr=[num2str(round(100*(((BarMaxLine-BarMinLine)/2)/BarZoom*-1))/100), ' nA'];
 annotation('textbox',[LegendStart+.003, BarMinLine-.5*Cushion, .1, .05],...
     'String', BarMinStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 
-BoxMaxStr=[num2str(max(diam)), ' µm3'];
+BoxMaxStr=[num2str(round(10*max(diam))/10), ' µm3'];
 annotation('textbox',[LegendStart+.003, BoxMaxLine-.5*Cushion-.01, .1, .05],...
     'String', BoxMaxStr,...
     'LineStyle', 'none',...
@@ -236,11 +245,11 @@ annotation('textbox',[LegendStart+.003, BoxMinLine-.5*Cushion, .1, .05],...
 
 
 annotation('textbox',[0 BoxMaxLine+.01 .2 .05],...
-    'String', strcat(num2str(min(distance)), ' µm (from soma)'),...
+    'String', strcat(num2str(round(min(distance))), ' µm (from soma)'),...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
-annotation('textbox',[LegendStart-.065 BoxMaxLine+.01 .1 .05],...
-    'String', strcat(num2str(max(distance)), ' µm'),...
+annotation('textbox',[LegendStart-.04 BoxMaxLine+.01 .1 .05],...
+    'String', strcat(num2str(round(max(distance))), ' µm'),...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
@@ -264,18 +273,22 @@ annotation('textbox',[.27 BoxMinLine-.04 .04 .04],...
 
 %Volt Line Chart%%%%%%%%%%%%%%%%%%
 
-LineMaxStr=[num2str(MaxVolt), ' mV'];
+LineMaxStr=[num2str(round(MaxVolt)), ' mV'];
 annotation('textbox',[LegendStart+.003, LineMaxLine-.5*Cushion-.005, .1, .05],...
     'String', LineMaxStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 
-LineMinStr=[num2str(min(volt(:))), ' mV'];
+LineMinStr=[num2str(round(MinVolt)) ' mV'];
 annotation('textbox',[LegendStart+.003, LineMinLine-.5*Cushion-.005, .1, .05],...
     'String', LineMinStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
+
+
+annotation('line', [0 LegendStart], [LineZeroMv LineZeroMv],...
+    'LineStyle', '--');
 
 
 annotation('line', [0 LegendStart], [LineZeroMv LineZeroMv],...
@@ -375,8 +388,9 @@ annotation('textbox',[LegendStart-.2 BoxMaxLine+.025 .05 .04],...
 
 
 %Line Chart - Voltage string
-annotation('textarrow', [LegendStart+.05 LegendStart+.05], [LineChartMidY-.03 LineChartMidY+.03],...
-    'String', 'Voltage');
+annotation('textarrow', [LegendStart+.01 LegendStart+.01], [LineChartMidY-.03 LineChartMidY+.03],...
+    'String', 'Voltage',...
+    'HorizontalAlignment','left');
 
 
 
@@ -401,7 +415,7 @@ for arrowloop=1:maxcompart
     
     
     %Sodium
-    SodiumBarSize=min(MaxBar, BarZoom*AbsNa(arrowloop, Time));
+    SodiumBarSize=min(MaxBar, BarZoom*AbsNa(arrowloop, CurrentTime));
     SodiumBar(arrowloop)=annotation('rectangle', ... #x, y, width, height ; preallocating makes no speed difference
         [BarX BarChartMidY-SodiumBarSize BarWidth SodiumBarSize],...
         'FaceColor',SodiumColor,... %R G B
@@ -412,7 +426,7 @@ for arrowloop=1:maxcompart
     
     
     %Potassium current
-    PotassiumBarSize=min(MaxBar, BarZoom*AbsK(arrowloop, Time));
+    PotassiumBarSize=min(MaxBar, BarZoom*AbsK(arrowloop, CurrentTime));
     PotassiumBar(arrowloop)=annotation('rectangle',...
         [BarX BarChartMidY-.0005 BarWidth PotassiumBarSize],...
         'FaceColor',PotassiumColor,...
@@ -423,7 +437,7 @@ for arrowloop=1:maxcompart
     
     %AMPA current
     
-    AMPABarSize=min(MaxBar, BarZoom*AbsAMPA(arrowloop, Time));
+    AMPABarSize=min(MaxBar, BarZoom*AbsAMPA(arrowloop, CurrentTime));
     AMPABar(arrowloop)=annotation('rectangle',...
         [BarX BarChartMidY-AMPABarSize BarWidth  AMPABarSize],...
         'FaceColor',AMPAColor,...
@@ -433,7 +447,7 @@ for arrowloop=1:maxcompart
     BarX=BarX+BarWidth;
     
     %NMDA current    
-    NMDABarSize=min(MaxBar, BarZoom*AbsNMDA(arrowloop, Time));
+    NMDABarSize=min(MaxBar, BarZoom*AbsNMDA(arrowloop, CurrentTime));
     NMDABar(arrowloop)=annotation('rectangle',...
         [BarX BarChartMidY-NMDABarSize BarWidth NMDABarSize],...
         'FaceColor',NMDAColor,...
@@ -444,8 +458,8 @@ for arrowloop=1:maxcompart
     
     
     %Capacitive current
-    CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, Time));
-    if cap(arrowloop, Time)>0
+    CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, CurrentTime));
+    if cap(arrowloop, CurrentTime)>0
         
         CapBar(arrowloop)=annotation('rectangle',...
             [BarX BarChartMidY-.0005 BarWidth CapBarSize],...
@@ -462,7 +476,7 @@ for arrowloop=1:maxcompart
     BarX= BarX + BarWidth;
     
     %Passive current 
-    PasBarSize=min(MaxBar, BarZoom*AbsPas(arrowloop, Time));
+    PasBarSize=min(MaxBar, BarZoom*AbsPas(arrowloop, CurrentTime));
     PasBar(arrowloop)=annotation('rectangle',...
         [BarX BarChartMidY-.0005 BarWidth PasBarSize],...
         'FaceColor',PasColor,...
@@ -480,7 +494,7 @@ for arrowloop=1:maxcompart
     BoxSize=BoxScaler*diam(arrowloop);          %Scales current value to range of rendering
     BoxFromBot=BoxChartMidY-.5*BoxSize;               %Determines lowest point of box; subtracts half box size from midline
     
-    ColorNumber=ceil(volt(arrowloop,Time))+abs(DifftoZero);
+    ColorNumber=ceil(volt(arrowloop,CurrentTime))+abs(DifftoZero);
     BarColor=[boxcolormap(ColorNumber,1) boxcolormap(ColorNumber,2) boxcolormap(ColorNumber,3)];
     
     DiamBar(arrowloop)=annotation('rectangle',[BoxX(arrowloop) BoxFromBot SpaceConstant BoxSize],...
@@ -489,7 +503,7 @@ for arrowloop=1:maxcompart
     
     
     %Axial current
-    ScaledArrowX= AxialScaler*axial(arrowloop,Time); %Sets range to -1 to 1
+    ScaledArrowX= AxialScaler*axial(arrowloop,CurrentTime); %Sets range to -1 to 1
     ArrowX2=max(.001,min(1, -1*ScaledArrowX)); % *-1 to correct axial directions
     
     AxialBox(arrowloop)=annotation('rectangle',...
@@ -517,6 +531,9 @@ for arrowloop=1:maxcompart
     annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [LineMaxLine LineMinLine], ...
                'LineStyle', ':',...
                'LineWidth', .1);  
+           
+           
+           
 end
 
 
@@ -529,63 +546,63 @@ end
 
 
 %-------------Main Display Loop-----------------%
-while Time<2000 && continued==true
+while CurrentTime<EndTime && continued==true  %maxtime
     tic %to smooth
     %   set(0,'CurrentFigure',figure(1) );
     
     %   str3=['STEP: ',num2str(steps/10),'ms'];
     %    set(StepDisplay, 'String', str3);
-    str3=['TIME: ',num2str(Time/10),'ms'];
+    str3=['TIME: ',num2str(CurrentTime/10),'ms'];
     set(TimeDisplay, 'String', str3) %(closing window midway causes program to end here, no problem)
     
     
     for arrowloop=1:maxcompart
         
-        SodiumBarSize=min(MaxBar, BarZoom*AbsNa(arrowloop, Time));
+        SodiumBarSize=min(MaxBar, BarZoom*AbsNa(arrowloop, CurrentTime));
         SodiumBarPos=[SodiumX(arrowloop) BarChartMidY-SodiumBarSize BarWidth SodiumBarSize];
         set(SodiumBar(arrowloop),'Position', SodiumBarPos);
         
-        PotassiumBarSize=min(MaxBar, BarZoom*AbsK(arrowloop, Time));
+        PotassiumBarSize=min(MaxBar, BarZoom*AbsK(arrowloop, CurrentTime));
         PotassiumBarPos=[PotassiumX(arrowloop) BarChartMidY-.0005 BarWidth PotassiumBarSize];
         set(PotassiumBar(arrowloop),'Position', PotassiumBarPos);
         
-        AMPABarSize=min(MaxBar, BarZoom*AbsAMPA(arrowloop, Time));
+        AMPABarSize=min(MaxBar, BarZoom*AbsAMPA(arrowloop, CurrentTime));
         AMPABarPos=[AMPAX(arrowloop) BarChartMidY-AMPABarSize BarWidth AMPABarSize];
         set(AMPABar(arrowloop),'Position', AMPABarPos);
         
         
-        NMDABarSize=min(MaxBar, BarZoom*AbsNMDA(arrowloop, Time));
+        NMDABarSize=min(MaxBar, BarZoom*AbsNMDA(arrowloop, CurrentTime));
         NMDABarPos=[NMDAX(arrowloop) BarChartMidY-NMDABarSize BarWidth NMDABarSize];
         set(NMDABar(arrowloop),'Position', NMDABarPos);
         
         
-        if cap(arrowloop, Time)>0
+        if cap(arrowloop, CurrentTime)>0
             
-            CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, Time));
+            CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, CurrentTime));
             CapBarPos=[CapX(arrowloop) BarChartMidY-.0005 BarWidth CapBarSize];
             set(CapBar(arrowloop),'Position', CapBarPos);
             
         else
             
-            CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, Time));
+            CapBarSize=min(MaxBar, BarZoom*AbsCap(arrowloop, CurrentTime));
             CapBarPos=[CapX(arrowloop) BarChartMidY-CapBarSize BarWidth CapBarSize];
             set(CapBar(arrowloop),'Position', CapBarPos);
         end
         
-        PasBarSize=min(MaxBar, BarZoom*AbsPas(arrowloop, Time));
+        PasBarSize=min(MaxBar, BarZoom*AbsPas(arrowloop, CurrentTime));
         PasBarPos=[PasX(arrowloop) BarChartMidY-.0005 BarWidth PasBarSize];
         set(PasBar(arrowloop),'Position', PasBarPos);
         
         
         %Bar Chart
-        ColorNumber=ceil(volt(arrowloop,Time))+abs(DifftoZero);
+        ColorNumber=ceil(volt(arrowloop,CurrentTime))+abs(DifftoZero);
         BarColor=[boxcolormap(ColorNumber,1) boxcolormap(ColorNumber,2) boxcolormap(ColorNumber,3)];
         set(DiamBar(arrowloop),'FaceColor',BarColor);
         
-        ScaledArrowX= AxialScaler*axial(arrowloop,Time);  %Sets range to -1 to 1
+        ScaledArrowX= AxialScaler*axial(arrowloop,CurrentTime);  %Sets range to -1 to 1
         ArrowX2=abs(min(1, -1*ScaledArrowX)); % *-1 to correct axial directions
         
-        if(axial(arrowloop,Time)<0)
+        if(axial(arrowloop,CurrentTime)<0)
             AxialBoxPosition=[BoxX(arrowloop) BoxChartMidY-.01 ArrowX2 .012];
         else
             AxialBoxPosition=[BoxX(arrowloop)-ArrowX2 BoxChartMidY-.01 ArrowX2 .012];
@@ -596,15 +613,16 @@ while Time<2000 && continued==true
         
         %Line chart
         
-        VLY1=VoltScaler*volt(arrowloop,Time);
-        VLY2=VoltScaler*volt(arrowloop+1,Time);
+        VLY1=VoltScaler*volt(arrowloop,CurrentTime);
+        VLY2=VoltScaler*volt(arrowloop+1,CurrentTime);
         VoltLineY= [(VLY1+LineZeroMv) (VLY2+LineZeroMv)];
         
         set(VoltLine(arrowloop),'Y', VoltLineY);
-        
-        
-        
-        
+        PlotScaledTime=CurrentTime-StartTime;
+              
+        set(SomaPlotLine, 'X', [PlotLineXScalar*PlotScaledTime+PlotX PlotLineXScalar*PlotScaledTime+PlotX])
+        set(SelectedPlotLine, 'X', [PlotLineXScalar*PlotScaledTime+PlotX PlotLineXScalar*PlotScaledTime+PlotX])
+
     end
     
  
@@ -616,15 +634,15 @@ while Time<2000 && continued==true
     drawnow;
     if recordmovie==true
         currentframe=getframe(gcf);
-        writeVideo(writerObj, currentframe);
+        writeVideo(writerObj, currentframe); %Quitting the window with recording on will end here. Video may still record.
     end
     
-    loopspeed=toc;
+    loopspeed=toc
     if (loopspeed<.3 && recordmovie==false)
         pause(.3-loopspeed); %Pause between switching frames
     end
     
-    Time = Time + steps; %Update time loop
+    CurrentTime = CurrentTime + steps; %Update time loop
     
 end %End main loop
 if recordmovie==true
