@@ -164,7 +164,7 @@ SomaPlotLine=annotation('line', [PlotX PlotX], [SomaPlotY SomaPlotY+PlotHeight],
 SelectedPlotLine=annotation('line', [PlotX PlotX], [SelectedPlotY SelectedPlotY+PlotHeight],...
     'LineWidth', .0001);
 
-PlotLineScalar= PlotWidth/maxtime;
+PlotWidth/
 
 
 %Spacing for arrows
@@ -517,9 +517,6 @@ for arrowloop=1:maxcompart
     annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [LineMaxLine LineMinLine], ...
                'LineStyle', ':',...
                'LineWidth', .1);  
-           
-           
-           
 end
 
 
@@ -532,7 +529,7 @@ end
 
 
 %-------------Main Display Loop-----------------%
-while Time<2000 && continued==true  %maxtime
+while Time<2000 && continued==true
     tic %to smooth
     %   set(0,'CurrentFigure',figure(1) );
     
@@ -605,10 +602,9 @@ while Time<2000 && continued==true  %maxtime
         
         set(VoltLine(arrowloop),'Y', VoltLineY);
         
-              
-        set(SomaPlotLine, 'X', [PlotLineScalar*Time+PlotX PlotLineScalar*Time+PlotX])
-        set(SelectedPlotLine, 'X', [PlotLineScalar*Time+PlotX PlotLineScalar*Time+PlotX])
-
+        
+        
+        
     end
     
  
