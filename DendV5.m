@@ -92,7 +92,7 @@ StartTime=2000;
 CurrentTime=StartTime;                     %Start time
 EndTime=2500;
 pauser=0;                      %Set to 1 to disable bar chart, 0 to enable
-LegendSpace=.45;
+LegendSpace=.435;
 LegendStart=1-LegendSpace;
 SpaceConstant=1/maxcompart *(LegendStart);  %Width of one compartment
 Cushion=.015;                               %Vertical space between graphs
@@ -147,28 +147,43 @@ voltI=volt';
 
 %Contextual Voltage charts
 PlotWidth=.33;
-PlotHeight=.45;
+PlotHeight=.42;
 PlotX=.665;
 SomaPlotY=.5;
 SelectedPlotY=.02;
+SelectedCompartment=13;     %Choose which voltage compartment to show in bottom right
 PlotLineXScalar= PlotWidth/(EndTime-StartTime);
+SomaPlotZeroMv=(abs(MinVolt)/((abs(MinVolt) + MaxVolt)))*(PlotHeight)+SomaPlotY;
+SelectedPlotZeroMv=(abs(MinVolt)/((abs(MinVolt) + MaxVolt)))*(PlotHeight)+SelectedPlotY;
+PlotYScalar=(1/(abs(MinVolt)+MaxVolt))  *PlotHeight;
 
 
+annotation('textbox', [PlotX+1/3*PlotWidth SomaPlotY+PlotHeight .1 .03],...
+           'String', 'Voltage near soma',...
+           'LineStyle', 'none');
 SomaPlot=axes('Position', [PlotX SomaPlotY PlotWidth PlotHeight]);
 plot(SomaPlot, voltI(StartTime:EndTime,1),'g');
 ylim(SomaPlot,[MinVolt MaxVolt]);
 xlim(SomaPlot,[1 EndTime-StartTime]);
 
+
+annotation('textbox', [PlotX+1/4*PlotWidth SelectedPlotY+PlotHeight .25 .03],...
+           'String', 'Voltage at selected compartment',...
+           'LineStyle', 'none');
 SelectedPlot=axes('Position', [PlotX SelectedPlotY PlotWidth PlotHeight]);
-plot(SelectedPlot, voltI(StartTime:EndTime,13), 'b');
+plot(SelectedPlot, voltI(StartTime:EndTime,SelectedCompartment), 'b');
 ylim(SelectedPlot,[MinVolt MaxVolt]);
 xlim(SelectedPlot,[1 EndTime-StartTime]);
 
-
-SomaPlotLine=annotation('line', [PlotX PlotX], [SomaPlotY SomaPlotY+PlotHeight],...
+%Creates a '+' on current time
+SomaPlotLine1=annotation('line', [PlotX PlotX], [SomaPlotY SomaPlotY+PlotHeight],...
+    'LineWidth', .0001);
+SomaPlotLine2=annotation('line', [PlotX PlotX], [SomaPlotY SomaPlotY+PlotHeight],...
     'LineWidth', .0001);
 
-SelectedPlotLine=annotation('line', [PlotX PlotX], [SelectedPlotY SelectedPlotY+PlotHeight],...
+SelectedPlotLine1=annotation('line', [PlotX PlotX], [SelectedPlotY SelectedPlotY+PlotHeight],...
+    'LineWidth', .0001);
+SelectedPlotLine2=annotation('line', [PlotX PlotX], [SelectedPlotY SelectedPlotY+PlotHeight],...
     'LineWidth', .0001);
 
 
@@ -305,10 +320,10 @@ annotation('textbox',[LegendStart+.003, LineZeroMv-.01, .1, .05],...
 
 %Sodium Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.03 BarChartMidY+.08 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY+.075 BarWidth .02],...
     'FaceColor',SodiumColor,... %R G B
     'LineWidth', .0005);
-annotation('textbox',[LegendStart+.032, BarChartMidY+.08, .1, .02],...
+annotation('textbox',[LegendStart+.012, BarChartMidY+.075, .1, .02],...
     'String', '  Sodium',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
@@ -316,59 +331,59 @@ annotation('textbox',[LegendStart+.032, BarChartMidY+.08, .1, .02],...
 
 %Potassium Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.03 BarChartMidY+.05 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY+.045 BarWidth .02],...
     'FaceColor',PotassiumColor,... %R G B
     'LineWidth', .0005);
-annotation('textbox',[LegendStart+.032, BarChartMidY+.05, .1, .02],...
+annotation('textbox',[LegendStart+.012, BarChartMidY+.045, .1, .02],...
     'String', '  Potassium',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 %AMPA Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.03 BarChartMidY+.020 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY+.015 BarWidth .02],...
     'FaceColor',AMPAColor,... %R G B
     'LineWidth', .0005);
-annotation('textbox',[LegendStart+.032, BarChartMidY+.02, .1, .02],...
+annotation('textbox',[LegendStart+.012, BarChartMidY+.015, .1, .02],...
     'String', '  AMPA',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 %NMDA Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.03 BarChartMidY-.01 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY-.015 BarWidth .02],...
     'FaceColor',NMDAColor,... %R G B
     'LineWidth', .0005);
-annotation('textbox',[LegendStart+.032, BarChartMidY-.01, .1, .02],...
+annotation('textbox',[LegendStart+.012, BarChartMidY-.015, .1, .02],...
     'String', '  NMDA',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 %Capacitive Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.03 BarChartMidY-.04 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY-.045 BarWidth .02],...
     'FaceColor',CapColor,... %R G B
     'LineWidth', .0005);
-annotation('textbox',[LegendStart+.032, BarChartMidY-.04, .1, .02],...
+annotation('textbox',[LegendStart+.012, BarChartMidY-.045, .1, .02],...
     'String', '  Capacitive',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 %Passive Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.03 BarChartMidY-.07 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY-.075 BarWidth .02],...
     'FaceColor',PasColor,... %R G B
     'LineWidth', .0005);
-annotation('textbox',[LegendStart+.032, BarChartMidY-.07, .1, .02],...
+annotation('textbox',[LegendStart+.012, BarChartMidY-.075, .1, .02],...
     'String', '  Passive',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 
-annotation('textarrow', [LegendStart+.02 LegendStart+.02], [BarChartMidY+.04 BarChartMidY+.08],...
+annotation('textarrow', [LegendStart+.02 LegendStart+.02], [BarChartMidY+.14 BarChartMidY+.18],...
     'String' , 'Out')
 
-annotation('textarrow', [LegendStart+.02 LegendStart+.02], [BarChartMidY-.04 BarChartMidY-.08],...
+annotation('textarrow', [LegendStart+.02 LegendStart+.02], [BarChartMidY-.14 BarChartMidY-.18],...
     'String' , 'In')
 
 
@@ -546,10 +561,7 @@ end
 %-------------Main Display Loop-----------------%
 while CurrentTime<EndTime && continued==true  %maxtime
     tic %to smooth
-    %   set(0,'CurrentFigure',figure(1) );
     
-    %   str3=['STEP: ',num2str(steps/10),'ms'];
-    %    set(StepDisplay, 'String', str3);
     str3=['TIME: ',num2str(CurrentTime/10),'ms'];
     set(TimeDisplay, 'String', str3) %(closing window midway causes program to end here, no problem)
     
@@ -616,18 +628,35 @@ while CurrentTime<EndTime && continued==true  %maxtime
         VoltLineY= [(VLY1+LineZeroMv) (VLY2+LineZeroMv)];
         
         set(VoltLine(arrowloop),'Y', VoltLineY);
+        
+        
         PlotScaledTime=CurrentTime-StartTime;
               
-        set(SomaPlotLine, 'X', [PlotLineXScalar*PlotScaledTime+PlotX PlotLineXScalar*PlotScaledTime+PlotX])
-        set(SelectedPlotLine, 'X', [PlotLineXScalar*PlotScaledTime+PlotX PlotLineXScalar*PlotScaledTime+PlotX])
+        SomaY=voltI(CurrentTime, 1) * PlotYScalar;
+        SelectedY=voltI(CurrentTime, SelectedCompartment) * PlotYScalar;
 
+        
+        
+        set(SomaPlotLine1, 'X', [PlotLineXScalar*PlotScaledTime+PlotX-.0025 PlotLineXScalar*PlotScaledTime+PlotX+.0025],...
+            'Y', [SomaY+SomaPlotZeroMv SomaY+SomaPlotZeroMv]);
+        set(SomaPlotLine2, 'X', [PlotLineXScalar*PlotScaledTime+PlotX PlotLineXScalar*PlotScaledTime+PlotX],...
+            'Y', [SomaY+SomaPlotZeroMv-.005 SomaY+SomaPlotZeroMv+.005]);
+        
+        
+        
+        set(SelectedPlotLine1, 'X', [PlotLineXScalar*PlotScaledTime+PlotX-.0025 PlotLineXScalar*PlotScaledTime+PlotX+.0025],...
+            'Y', [SelectedY+SelectedPlotZeroMv SelectedY+SelectedPlotZeroMv]);
+                
+        set(SelectedPlotLine2, 'X', [PlotLineXScalar*PlotScaledTime+PlotX PlotLineXScalar*PlotScaledTime+PlotX],...
+            'Y', [SelectedY+SelectedPlotZeroMv-.005 SelectedY+SelectedPlotZeroMv+.005]);
+
+        
+        
+        
+        
     end
     
  
-    
-    
-    
-    
     
     drawnow;
     if recordmovie==true
@@ -635,7 +664,7 @@ while CurrentTime<EndTime && continued==true  %maxtime
         writeVideo(writerObj, currentframe); %Quitting the window with recording on will end here. Video may still record.
     end
     
-    loopspeed=toc
+    loopspeed=toc;
     if (loopspeed<.3 && recordmovie==false)
         pause(.3-loopspeed); %Pause between switching frames
     end
