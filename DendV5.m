@@ -1,29 +1,82 @@
-function [  ] = DendV5()
+function [  ] = DendV5(Filename, StartTime, EndTime)
 %DENDV Render a dendrite's electrical properties
 %   DendV visualizes the various current flow within a dendrite compartment
 %   Including: Axonal, NMDA, K+, Na+, Leak, Transmembrane
 
 %   DendV was built using MATLAB
 %   For any issues or questions, please contact Andrew Schreiber at
-%   aschreib@usc.edu
+%   aschreib@usc.edu or Dr. Bartlett Mel at mel@usc.edu
 %   USC Lab for Neural Computation
 
-%{
-TO DO:
 
-Roadmap:
--Make colormap based on absolute values instead of relative
--Make max of line graph the max of the voltage
--Set loading screen as intro
-
-
-
-%}
+    function mapped_variable=map_compartment(variable,type)
+        comp_size=maxcompart/newmaxcompart;
+        rem_size= rem(comp_size,1);
+        compartcount=1;
+        percentin=1;
+        curr=0;
+        
+        if type==1
+            compartcount=1;
+            for jk=1:newmaxcompart
+                while comp_size>0
+                    curr= curr+ percentin*variable(compartcount,:);
+                    comp_size=comp_size-percentin;
+                    compartcount=compartcount+1;
+                    percentin=1;
+                    if comp_size<1
+                        if compartcount<=maxcompart
+                            curr=curr + comp_size* variable(compartcount,:);
+                        end
+                        percentin=1-comp_size;
+                        comp_size=0;
+                    end
+                end
+                comp_size=maxcompart/newmaxcompart;
+                mapped_variable(jk,:)=curr;
+                curr=0;
+            end
+        end
+        
+        if type==2
+            compartcount=1;
+            for jk=1:newmaxcompart
+                mapped_variable(jk,:)=variable(compartcount,:);
+                compartcount=int64(compartcount+comp_size-rem_size);
+            end
+        end
+        
+        if type==3
+            compartcount=1;
+            for jk=1:newmaxcompart
+                while comp_size>0
+                    curr= curr+ percentin*variable(compartcount,:);
+                    comp_size=comp_size-percentin;
+                    compartcount=compartcount+1;
+                    percentin=1;
+                    if comp_size<1
+                        if compartcount<=maxcompart
+                            curr=curr + comp_size* variable(compartcount,:);
+                        end
+                        percentin=1-comp_size;
+                        comp_size=0;
+                    end
+                end
+                comp_size=maxcompart/newmaxcompart;
+                mapped_variable(jk,:)=curr/comp_size;
+                curr=0;
+            end
+        end
+        
+        
+    end
 
 
 %Initializing
 pause on;
 close all;
+StartTime=StartTime*10;
+EndTime=EndTime*10;
 scrsz = get(0,'ScreenSize');
 startbarsize=45;
 Filename='BardiaSimulation.mat';
@@ -59,6 +112,8 @@ global pauser;
 global diam;
 global cap;
 global pas;
+global maxcompart;
+global newmaxcompart;
 
 sodium = Datafile.ina;
 potass = Datafile.ik;
@@ -71,6 +126,33 @@ diam = Datafile.diam; %microns
 cap= Datafile.icap;
 pas= Datafile.ipas;
 
+
+
+%General Settings
+set(0,'CurrentFigure',figure(1) );
+[~,maxtime]=size(ampa);
+[maxcompart,~]=size(potass);
+LoopAdd=1; %Dont change value
+
+
+MapCompartments=true;  %Map data compartments to another # of compartments
+newmaxcompart=10;
+
+if MapCompartments==true && newmaxcompart<maxcompart
+    sodium=map_compartment(sodium,1);
+    potass=map_compartment(potass,1);
+    nmda=map_compartment(nmda,1);
+    ampa=map_compartment(ampa,1);
+    axial=map_compartment(axial,2);
+    volt=map_compartment(volt,3);
+    diam=map_compartment(diam,3);
+    cap=map_compartment(cap,1);
+    pas=map_compartment(pas,1);
+    maxcompart=newmaxcompart;
+end
+    
+    
+
 %Absolute values of data points. Non-zero.
 AbsNa = -1*(sodium-eps);
 AbsK = potass+eps;
@@ -79,18 +161,13 @@ AbsNMDA = -1*(nmda -eps);
 AbsV = abs(volt+eps);
 AbsAxial = abs(axial+eps);
 AbsCap= abs(cap +eps);
-AbsPas=abs(pas+eps);
+AbsPas=abs(pas+eps);    
 
-
-%General Settings
-set(0,'CurrentFigure',figure(1) );
-[~,maxtime]=size(ampa);
-[maxcompart,~]=size(potass);
+    
+%General settings continued
 continued=true;
 steps=1;                       %Temporal jump per loop
-StartTime=2000;
 CurrentTime=StartTime;                     %Start time
-EndTime=2500;
 pauser=0;                      %Set to 1 to disable bar chart, 0 to enable
 LegendSpace=.435;
 LegendStart=1-LegendSpace;
@@ -119,7 +196,7 @@ PasColor=      [0 1 0];
 %Box chart settings
 DifftoZero=min(ceil(volt(:)));                     %Takes smallest value in volt
 VoltRange= abs( max(ceil(volt(:))) - DifftoZero);  %Range of Volt; works {++,+-,-+,--}
-boxcolormap=colormap(jet(VoltRange));              %Sets range-based Jet colormap
+boxcolormap=colormap(jet(100));              %Sets range-based Jet colormap
 AxialScaler=(.9*SpaceConstant)/max(abs(axial(:))); %Multiplies with axial current to fit in compartment
 BoxChartMidY=.625;                                       %Midpoint of Box chart
 BoxScaler=1/max(diam) * (.15 - 2*Cushion);         %*(.33) for scale to 1/3 of figure
@@ -149,22 +226,30 @@ voltI=volt';
 PlotWidth=.33;
 PlotHeight=.42;
 PlotX=.665;
-SomaPlotY=.5;
-SelectedPlotY=.02;
-SelectedCompartment=13;     %Choose which voltage compartment to show in bottom right
+SomaPlotY=.53;
+SelectedPlotY=.05;
+SomaCompartment=1;
+SelectedCompartment=5;     %Choose which voltage compartment to show in bottom right
 PlotLineXScalar= PlotWidth/(EndTime-StartTime);
 SomaPlotZeroMv=(abs(MinVolt)/((abs(MinVolt) + MaxVolt)))*(PlotHeight)+SomaPlotY;
 SelectedPlotZeroMv=(abs(MinVolt)/((abs(MinVolt) + MaxVolt)))*(PlotHeight)+SelectedPlotY;
 PlotYScalar=(1/(abs(MinVolt)+MaxVolt))  *PlotHeight;
+TimeSpan=(EndTime-StartTime)/10;
 
 
 annotation('textbox', [PlotX+1/3*PlotWidth SomaPlotY+PlotHeight .1 .03],...
            'String', 'Voltage near soma',...
            'LineStyle', 'none');
 SomaPlot=axes('Position', [PlotX SomaPlotY PlotWidth PlotHeight]);
-plot(SomaPlot, voltI(StartTime:EndTime,1),'g');
+plot(SomaPlot, voltI(StartTime:EndTime,SomaCompartment),'g');
 ylim(SomaPlot,[MinVolt MaxVolt]);
 xlim(SomaPlot,[1 EndTime-StartTime]);
+xlabel(SomaPlot,'ms')
+ylabel(SomaPlot,'mV') 
+XTickMarks=get(gca,'XTick');
+AdjustedTick=(XTickMarks+StartTime)/10;
+set(SomaPlot, 'XTickLabel', AdjustedTick );
+
 
 
 annotation('textbox', [PlotX+1/4*PlotWidth SelectedPlotY+PlotHeight .25 .03],...
@@ -174,6 +259,11 @@ SelectedPlot=axes('Position', [PlotX SelectedPlotY PlotWidth PlotHeight]);
 plot(SelectedPlot, voltI(StartTime:EndTime,SelectedCompartment), 'b');
 ylim(SelectedPlot,[MinVolt MaxVolt]);
 xlim(SelectedPlot,[1 EndTime-StartTime]);
+xlabel(SelectedPlot,'ms') 
+ylabel(SelectedPlot,'mV') 
+set(SelectedPlot, 'XTickLabel', AdjustedTick );
+
+
 
 %Creates a '+' on current time
 SomaPlotLine1=annotation('line', [PlotX PlotX], [SomaPlotY SomaPlotY+PlotHeight],...
@@ -245,14 +335,20 @@ annotation('textbox',[LegendStart+.003, BarMinLine-.5*Cushion, .1, .05],...
     'VerticalAlignment', 'bottom');
 
 
-BoxMaxStr=[num2str(round(10*max(diam))/10), ' µm3'];
+BoxMaxStr=[num2str(round(10*max(diam))/20), ' µm3'];
 annotation('textbox',[LegendStart+.003, BoxMaxLine-.5*Cushion-.01, .1, .05],...
     'String', BoxMaxStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
+BoxMidStr='0 µm3';
+annotation('textbox',[LegendStart+.003, BoxChartMidY-.025, .1, .05],...
+    'String', BoxMidStr,...
+    'LineStyle', 'none',...
+    'VerticalAlignment', 'middle');
 
-BoxMinStr=['0', ' µm3'];
+
+BoxMinStr=[num2str(round(10*max(diam))/20), ' µm3'];
 annotation('textbox',[LegendStart+.003, BoxMinLine-.5*Cushion, .1, .05],...
     'String', BoxMinStr,...
     'LineStyle', 'none',...
@@ -320,7 +416,7 @@ annotation('textbox',[LegendStart+.003, LineZeroMv-.01, .1, .05],...
 
 %Sodium Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.01 BarChartMidY+.075 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY+.075 .006 .02],...
     'FaceColor',SodiumColor,... %R G B
     'LineWidth', .0005);
 annotation('textbox',[LegendStart+.012, BarChartMidY+.075, .1, .02],...
@@ -331,7 +427,7 @@ annotation('textbox',[LegendStart+.012, BarChartMidY+.075, .1, .02],...
 
 %Potassium Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.01 BarChartMidY+.045 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY+.045 .006 .02],...
     'FaceColor',PotassiumColor,... %R G B
     'LineWidth', .0005);
 annotation('textbox',[LegendStart+.012, BarChartMidY+.045, .1, .02],...
@@ -341,7 +437,7 @@ annotation('textbox',[LegendStart+.012, BarChartMidY+.045, .1, .02],...
 
 %AMPA Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.01 BarChartMidY+.015 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY+.015 .006 .02],...
     'FaceColor',AMPAColor,... %R G B
     'LineWidth', .0005);
 annotation('textbox',[LegendStart+.012, BarChartMidY+.015, .1, .02],...
@@ -351,7 +447,7 @@ annotation('textbox',[LegendStart+.012, BarChartMidY+.015, .1, .02],...
 
 %NMDA Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.01 BarChartMidY-.015 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY-.015 .006 .02],...
     'FaceColor',NMDAColor,... %R G B
     'LineWidth', .0005);
 annotation('textbox',[LegendStart+.012, BarChartMidY-.015, .1, .02],...
@@ -361,7 +457,7 @@ annotation('textbox',[LegendStart+.012, BarChartMidY-.015, .1, .02],...
 
 %Capacitive Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.01 BarChartMidY-.045 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY-.045 .006 .02],...
     'FaceColor',CapColor,... %R G B
     'LineWidth', .0005);
 annotation('textbox',[LegendStart+.012, BarChartMidY-.045, .1, .02],...
@@ -371,7 +467,7 @@ annotation('textbox',[LegendStart+.012, BarChartMidY-.045, .1, .02],...
 
 %Passive Legend
 annotation('rectangle', ... #x, y, width, height
-    [LegendStart+.01 BarChartMidY-.075 BarWidth .02],...
+    [LegendStart+.01 BarChartMidY-.075 .006 .02],...
     'FaceColor',PasColor,... %R G B
     'LineWidth', .0005);
 annotation('textbox',[LegendStart+.012, BarChartMidY-.075, .1, .02],...
@@ -388,14 +484,14 @@ annotation('textarrow', [LegendStart+.02 LegendStart+.02], [BarChartMidY-.14 Bar
 
 
 %axial legend
-annotation('line', [LegendStart-.22 LegendStart-.22],[BoxMaxLine BoxMaxLine+.05])
+annotation('line', [LegendStart-.12 LegendStart-.12],[BoxMaxLine BoxMaxLine+.05])
 annotation('rectangle',...
-    [LegendStart-.22 BoxMaxLine+.02 .5*SpaceConstant .012],...
+    [LegendStart-.12 BoxMaxLine+.02 .5*SpaceConstant .012],...
     'LineWidth', .0001, ...
     'FaceColor', [.2 .1 .1]);
 
-annotation('textbox',[LegendStart-.2 BoxMaxLine+.025 .05 .04],...
-    'String', '0.5 mV Axial',...
+annotation('textbox',[LegendStart-.16 BoxMaxLine+.025 .05 .04],...
+    'String', '0.5 nA Axial',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
@@ -410,14 +506,16 @@ annotation('textarrow', [LegendStart+.01 LegendStart+.01], [LineChartMidY-.03 Li
 
 
 %Setting up display
-for arrowloop=1:maxcompart
+arrowloop=1;
+while arrowloop<=maxcompart
     BoxX(arrowloop)=SpaceConstant*arrowloop-SpaceConstant;
+    arrowloop=arrowloop+LoopAdd;
 end
 
 
 
-
-for arrowloop=1:maxcompart
+arrowloop=1;
+while arrowloop<=maxcompart
     if continued==false
         break;
     end
@@ -533,6 +631,9 @@ for arrowloop=1:maxcompart
     
     
     %Vertical dotted lines
+    annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [BoxFromBot+BoxSize BoxMaxLine], ...
+               'LineStyle', ':',...
+               'LineWidth', .1);
     annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [BoxFromBot BoxMinLine], ...
                'LineStyle', ':',...
                'LineWidth', .1);
@@ -546,7 +647,7 @@ for arrowloop=1:maxcompart
                'LineWidth', .1);  
            
            
-           
+   arrowloop=arrowloop+LoopAdd;      
 end
 
 
@@ -560,13 +661,13 @@ end
 
 %-------------Main Display Loop-----------------%
 while CurrentTime<EndTime && continued==true  %maxtime
-    tic %to smooth
+    tic %measures loop speed to smooth display when recording is off
     
     str3=['TIME: ',num2str(CurrentTime/10),'ms'];
-    set(TimeDisplay, 'String', str3) %(closing window midway causes program to end here, no problem)
     
-    
-    for arrowloop=1:maxcompart
+set(TimeDisplay, 'String', str3) %(closing window midway causes program to end here, no problem)
+    arrowloop=1;
+    while arrowloop<=maxcompart
         
         SodiumBarSize=min(MaxBar, BarZoom*AbsNa(arrowloop, CurrentTime));
         SodiumBarPos=[SodiumX(arrowloop) BarChartMidY-SodiumBarSize BarWidth SodiumBarSize];
@@ -624,7 +725,9 @@ while CurrentTime<EndTime && continued==true  %maxtime
         %Line chart
         
         VLY1=VoltScaler*volt(arrowloop,CurrentTime);
+        if arrowloop~=maxcompart
         VLY2=VoltScaler*volt(arrowloop+1,CurrentTime);
+        end
         VoltLineY= [(VLY1+LineZeroMv) (VLY2+LineZeroMv)];
         
         set(VoltLine(arrowloop),'Y', VoltLineY);
@@ -651,7 +754,7 @@ while CurrentTime<EndTime && continued==true  %maxtime
             'Y', [SelectedY+SelectedPlotZeroMv-.005 SelectedY+SelectedPlotZeroMv+.005]);
 
         
-        
+        arrowloop=arrowloop+LoopAdd; 
         
         
     end
