@@ -128,7 +128,6 @@ pas= Datafile.ipas;
 
 
 
-%General Settings
 set(0,'CurrentFigure',figure(1) );
 [~,maxtime]=size(ampa);
 [maxcompart,~]=size(potass);
@@ -164,7 +163,7 @@ AbsCap= abs(cap +eps);
 AbsPas=abs(pas+eps);    
 
     
-%General settings continued
+%General settings 
 continued=true;
 steps=1;                       %Temporal jump per loop
 CurrentTime=StartTime;                     %Start time
@@ -176,7 +175,7 @@ Cushion=.015;                               %Vertical space between graphs
 recordmovie=true;                          %Records a video into current directory. Set true/false
 
 
-%Bar chart settings
+%Ion Channel Graph settings
 BaseLineX1=.1*SpaceConstant;            %Adjust space between bar midlines
 BaseLineX2=BaseLineX1+SpaceConstant*.8; %Adjust .1 or .8 to adjust space from left and right, respectively
 BarWidth=SpaceConstant*.8/6;            %6 bars currently **replace with a GetBars
@@ -193,18 +192,20 @@ CapColor=      [.8 .5 .5];
 PasColor=      [0 1 0];
 
 
-%Box chart settings
+%Axual Graph settings
 DifftoZero=min(ceil(volt(:)));                     %Takes smallest value in volt
 VoltRange= abs( max(ceil(volt(:))) - DifftoZero);  %Range of Volt; works {++,+-,-+,--}
 boxcolormap=colormap(jet(100));              %Sets range-based Jet colormap
 AxialScaler=(.9*SpaceConstant)/max(abs(axial(:))); %Multiplies with axial current to fit in compartment
+AxialZoom=3;
+MaxAxial=.9*SpaceConstant;
 BoxChartMidY=.625;                                       %Midpoint of Box chart
 BoxScaler=1/max(diam) * (.15 - 2*Cushion);         %*(.33) for scale to 1/3 of figure
 BoxMaxLine=BoxChartMidY+ .075 - Cushion;
 BoxMinLine=BoxChartMidY- .075 + Cushion;
 
 
-%Line chart settings
+%Voltage Chart settings
 LineChartMidY= .85;
 LineMaxLine=LineChartMidY +.12 - Cushion;
 LineMinLine=LineChartMidY -.12 + Cushion;
@@ -490,8 +491,9 @@ annotation('rectangle',...
     'LineWidth', .0001, ...
     'FaceColor', [.2 .1 .1]);
 
+AxialLegSize=round(.5/AxialZoom*100)/100;
 annotation('textbox',[LegendStart-.16 BoxMaxLine+.025 .05 .04],...
-    'String', '0.5 nA Axial',...
+    'String', strcat(num2str(AxialLegSize), ' nA Axial'),...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
@@ -710,7 +712,7 @@ set(TimeDisplay, 'String', str3) %(closing window midway causes program to end h
         BarColor=[boxcolormap(ColorNumber,1) boxcolormap(ColorNumber,2) boxcolormap(ColorNumber,3)];
         set(DiamBar(arrowloop),'FaceColor',BarColor);
         
-        ScaledArrowX= AxialScaler*axial(arrowloop,CurrentTime);  %Sets range to -1 to 1
+        ScaledArrowX= min(MaxAxial,AxialZoom*AxialScaler*axial(arrowloop,CurrentTime));  %Sets range to -1 to 1
         ArrowX2=abs(min(1, -1*ScaledArrowX)); % *-1 to correct axial directions
         
         if(axial(arrowloop,CurrentTime)<0)

@@ -5,18 +5,9 @@ function [  ] = DendV5(Filename, StartTime, EndTime)
 
 %   DendV was built using MATLAB
 %   For any issues or questions, please contact Andrew Schreiber at
-%   aschreib@usc.edu
+%   aschreib@usc.edu or Dr. Bartlett Mel at mel@usc.edu
 %   USC Lab for Neural Computation
 
-%{
-TO DO:
-
-Roadmap:
--Make colormap based on absolute values instead of relative
--Adjust X axis on contextual voltage to be Start time / end time
--Write user manual
-
-%}
 
     function mapped_variable=map_compartment(variable,type)
         comp_size=maxcompart/newmaxcompart;
@@ -48,14 +39,15 @@ Roadmap:
         end
         
         if type==2
-            compartcount=0;
+            compartcount=1;
             for jk=1:newmaxcompart
                 mapped_variable(jk,:)=variable(compartcount,:);
-                compartcount=compartcount+comp_size-rem_size;
+                compartcount=int64(compartcount+comp_size-rem_size);
             end
         end
         
         if type==3
+            compartcount=1;
             for jk=1:newmaxcompart
                 while comp_size>0
                     curr= curr+ percentin*variable(compartcount,:);
@@ -78,12 +70,6 @@ Roadmap:
         
         
     end
-
-  
-  
-
-
-
 
 
 %Initializing
@@ -142,7 +128,6 @@ pas= Datafile.ipas;
 
 
 
-%General Settings
 set(0,'CurrentFigure',figure(1) );
 [~,maxtime]=size(ampa);
 [maxcompart,~]=size(potass);
@@ -150,7 +135,7 @@ LoopAdd=1; %Dont change value
 
 
 MapCompartments=true;  %Map data compartments to another # of compartments
-newmaxcompart=6;
+newmaxcompart=10;
 
 if MapCompartments==true && newmaxcompart<maxcompart
     sodium=map_compartment(sodium,1);
@@ -178,7 +163,7 @@ AbsCap= abs(cap +eps);
 AbsPas=abs(pas+eps);    
 
     
-%General settings continued
+%General settings 
 continued=true;
 steps=1;                       %Temporal jump per loop
 CurrentTime=StartTime;                     %Start time
@@ -187,10 +172,10 @@ LegendSpace=.435;
 LegendStart=1-LegendSpace;
 SpaceConstant=1/maxcompart *(LegendStart);  %Width of one compartment
 Cushion=.015;                               %Vertical space between graphs
-recordmovie=false;                          %Records a video into current directory. Set true/false
+recordmovie=true;                          %Records a video into current directory. Set true/false
 
 
-%Bar chart settings
+%Ion Channel Graph settings
 BaseLineX1=.1*SpaceConstant;            %Adjust space between bar midlines
 BaseLineX2=BaseLineX1+SpaceConstant*.8; %Adjust .1 or .8 to adjust space from left and right, respectively
 BarWidth=SpaceConstant*.8/6;            %6 bars currently **replace with a GetBars
@@ -207,18 +192,20 @@ CapColor=      [.8 .5 .5];
 PasColor=      [0 1 0];
 
 
-%Box chart settings
+%Axual Graph settings
 DifftoZero=min(ceil(volt(:)));                     %Takes smallest value in volt
 VoltRange= abs( max(ceil(volt(:))) - DifftoZero);  %Range of Volt; works {++,+-,-+,--}
 boxcolormap=colormap(jet(100));              %Sets range-based Jet colormap
 AxialScaler=(.9*SpaceConstant)/max(abs(axial(:))); %Multiplies with axial current to fit in compartment
+AxialZoom=3;
+MaxAxial=.9*SpaceConstant;
 BoxChartMidY=.625;                                       %Midpoint of Box chart
 BoxScaler=1/max(diam) * (.15 - 2*Cushion);         %*(.33) for scale to 1/3 of figure
 BoxMaxLine=BoxChartMidY+ .075 - Cushion;
 BoxMinLine=BoxChartMidY- .075 + Cushion;
 
 
-%Line chart settings
+%Voltage Chart settings
 LineChartMidY= .85;
 LineMaxLine=LineChartMidY +.12 - Cushion;
 LineMinLine=LineChartMidY -.12 + Cushion;
@@ -504,8 +491,9 @@ annotation('rectangle',...
     'LineWidth', .0001, ...
     'FaceColor', [.2 .1 .1]);
 
+AxialLegSize=round(.5/AxialZoom*100)/100;
 annotation('textbox',[LegendStart-.16 BoxMaxLine+.025 .05 .04],...
-    'String', '0.5 nA Axial',...
+    'String', strcat(num2str(AxialLegSize), ' nA Axial'),...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
@@ -724,7 +712,7 @@ set(TimeDisplay, 'String', str3) %(closing window midway causes program to end h
         BarColor=[boxcolormap(ColorNumber,1) boxcolormap(ColorNumber,2) boxcolormap(ColorNumber,3)];
         set(DiamBar(arrowloop),'FaceColor',BarColor);
         
-        ScaledArrowX= AxialScaler*axial(arrowloop,CurrentTime);  %Sets range to -1 to 1
+        ScaledArrowX= min(MaxAxial,AxialZoom*AxialScaler*axial(arrowloop,CurrentTime));  %Sets range to -1 to 1
         ArrowX2=abs(min(1, -1*ScaledArrowX)); % *-1 to correct axial directions
         
         if(axial(arrowloop,CurrentTime)<0)
