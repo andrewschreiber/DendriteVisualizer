@@ -24,7 +24,7 @@ function [  ] = DendV5(Filename, StartTime, EndTime)
 %--New model that lets you set the value at the legend and the graph works accordingly
 %Round numbers on box chart size (1 and 0). take off 3. one line.
 %Round number on ion channel chart (1 instead of .98). Adjust bar size
-%accordingly. Same as above. 
+%accordingly. Same as above.
 
 
 %++Axial legend pointing other direction under compartment to left of current
@@ -40,7 +40,12 @@ function [  ] = DendV5(Filename, StartTime, EndTime)
 %there accordingly
 
 
-%Record at .1 and 1 on bar chart.
+%++Implement function to map size of ion channel / box chart to a given legend value
+%++Dendrite length clipping fix
+%++label input with "Synaptic Input"
+%++fix clipping on from-soma
+%--fix bold on 'In" -> Submitted bug report
+%Record at 1 and .1 on ion channel chart
 
 
     function mapped_variable=map_compartment(variable,type)
@@ -182,8 +187,8 @@ if MapCompartments==true && newmaxcompart<maxcompart
     pas=map_compartment(pas,1);
     maxcompart=newmaxcompart;
 end
-    
-    
+
+
 
 %Absolute values of data points. Non-zero.
 AbsNa = -1*(sodium-eps);
@@ -193,10 +198,10 @@ AbsNMDA = -1*(nmda -eps);
 AbsV = abs(volt+eps);
 AbsAxial = abs(axial+eps);
 AbsCap= abs(cap +eps);
-AbsPas=abs(pas+eps);    
+AbsPas=abs(pas+eps);
 
-    
-%General settings 
+
+%General settings
 continued=true;
 steps=1;                       %Temporal jump per loop
 CurrentTime=StartTime;                     %Start time
@@ -212,12 +217,12 @@ recordmovie=true;                          %Records a video into current directo
 BaseLineX1=.1*SpaceConstant;            %Adjust space between bar midlines
 BaseLineX2=BaseLineX1+SpaceConstant*.8; %Adjust .1 or .8 to adjust space from left and right, respectively
 BarWidth=SpaceConstant*.8/6;            %6 bars currently **replace with a GetBars
-BarZoom=.25;                              %Manual scalar for barsize
+BarLimit=1;                            %Manual limit for barsize
 BarChartMidY=.26;                       %Midline location
 MaxBar=.26 - Cushion;                   %Maximum allowed size for bar
 BarMaxLine= BarChartMidY + .26 - Cushion;
 BarMinLine= BarChartMidY - .26 + Cushion;
-SodiumColor=   [1 0 0];    
+SodiumColor=   [1 0 0];
 PotassiumColor=[1 .9 0];
 AMPAColor=     [0 1 1];
 NMDAColor=     [0 0 1];
@@ -225,7 +230,7 @@ CapColor=      [.8 .5 .5];
 PasColor=      [0 1 0];
 
 
-%Axual Graph settings
+%Axial Graph settings
 DifftoZero=min(ceil(volt(:)));                     %Takes smallest value in volt
 VoltRange= abs( max(ceil(volt(:))) - DifftoZero);  %Range of Volt; works {++,+-,-+,--}
 VoltageCeiling=abs(50);                     %Highest voltage mapped in colormap is 50mV
@@ -235,9 +240,11 @@ AxialScaler=(.9*SpaceConstant)/max(abs(axial(:))); %Multiplies with axial curren
 AxialZoom=1;                                    %Zoom on axial bars
 MaxAxial=.9*SpaceConstant;
 BoxChartMidY=.625;                                       %Midpoint of Box chart
-BoxScaler=1/max(diam) * (.15 - 2*Cushion);         %*(.33) for scale to 1/3 of figure
 BoxMaxLine=BoxChartMidY+ .075 - Cushion;
 BoxMinLine=BoxChartMidY- .075 + Cushion;
+
+BoxScaler=1/max(diam) * (.15 - 2*Cushion);         %*(.33) for scale to 1/3 of figure
+
 
 
 %Voltage Line Chart settings
@@ -247,20 +254,22 @@ LineMinLine=LineChartMidY -.12 + Cushion;
 MaxVolt=max(volt(:));
 MinVolt=min(volt(:));
 LineZeroMv=(abs(MinVolt)/((abs(MinVolt) + MaxVolt)))*(LineMaxLine-LineMinLine)+LineMinLine;
-VoltScaler=(1/max(abs(volt(:))))*(LineMaxLine-LineMinLine);  
+VoltScaler=(1/max(abs(volt(:))))*(LineMaxLine-LineMinLine);
 
 
 
 %Current input indicator settings
-NumberOfInputs=1;           %Set the number of inputs
+NumberOfInputs=1;           %Set the number of inputs, unimplemented 
 InputCompartment=4;         %Set the compartment where input arrives
 InputColor = NMDAColor;     %set the input color. See ion channel graph settings, or make up your own [R G B];
 
 
 clf;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contextual Voltage charts %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Contextual Voltage charts
 voltI=volt';
 PlotWidth=.33;
 PlotHeight=.42;
@@ -277,14 +286,14 @@ TimeSpan=(EndTime-StartTime)/10;
 
 
 annotation('textbox', [PlotX+1/3*PlotWidth SomaPlotY+PlotHeight .3 .03],...
-           'String', 'Voltage near soma',...
-           'LineStyle', 'none');
+    'String', 'Voltage near soma',...
+    'LineStyle', 'none');
 SomaPlot=axes('Position', [PlotX SomaPlotY PlotWidth PlotHeight]);
 plot(SomaPlot, voltI(StartTime:EndTime,SomaCompartment),'g');
 ylim(SomaPlot,[MinVolt MaxVolt]);
 xlim(SomaPlot,[1 EndTime-StartTime]);
 xlabel(SomaPlot,'ms')
-ylabel(SomaPlot,'mV') 
+ylabel(SomaPlot,'mV')
 XTickMarks=get(gca,'XTick');
 AdjustedTick=(XTickMarks+StartTime)/10;
 set(SomaPlot, 'XTickLabel', AdjustedTick );
@@ -292,14 +301,14 @@ set(SomaPlot, 'XTickLabel', AdjustedTick );
 
 
 annotation('textbox', [PlotX+1/4*PlotWidth SelectedPlotY+PlotHeight .25 .03],...
-           'String', 'Voltage at stimulated compartment',...
-           'LineStyle', 'none');
+    'String', 'Voltage at stimulated compartment',...
+    'LineStyle', 'none');
 SelectedPlot=axes('Position', [PlotX SelectedPlotY PlotWidth PlotHeight]);
 plot(SelectedPlot, voltI(StartTime:EndTime,SelectedCompartment), 'b');
 ylim(SelectedPlot,[MinVolt MaxVolt]);
 xlim(SelectedPlot,[1 EndTime-StartTime]);
-xlabel(SelectedPlot,'ms') 
-ylabel(SelectedPlot,'mV') 
+xlabel(SelectedPlot,'ms')
+ylabel(SelectedPlot,'mV')
 set(SelectedPlot, 'XTickLabel', AdjustedTick );
 
 
@@ -366,79 +375,77 @@ annotation('line', [(LegendStart+LegCush) (LegendStart+LegCush)], [LineMaxLine L
     'LineWidth', 5);
 
 
+%%%%%%%%%%%%%%
+% Bar Legend %
+%%%%%%%%%%%%%%
 
-%Legend Strings
-BarMaxStr=[num2str(round(10*(((BarMaxLine-BarMinLine)/2)/BarZoom))/10), ' nA'];
+%Bar chart
+BarZoom = ((BarMaxLine-BarMinLine)/2)/BarLimit;
+
+BarMaxStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarZoom), ' nA'];
 annotation('textbox',[LegendStart+.003, BarMaxLine-.5*Cushion-.01, .1, .05],... %-.5*Cushion for ideal alignment
     'String', BarMaxStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 
-BarMinStr=[num2str(round(10*(((BarMaxLine-BarMinLine)/2)/BarZoom*-1))/10), ' nA'];
+BarMinStr=[num2str(((BarMaxLine-BarMinLine)/2)/BarZoom*-1), ' nA'];
 annotation('textbox',[LegendStart+.003, BarMinLine-.5*Cushion, .1, .05],...
     'String', BarMinStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
 
-BoxMaxStr=[num2str(round(10*max(diam))/20), ' µm']; %/20 as its divided in half
+BoxMaxStr=[num2str(round(10*max(diam))/10), ' µm'];
 annotation('textbox',[LegendStart+.003, BoxMaxLine-.5*Cushion-.01, .06, .02],...
     'String', BoxMaxStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
-BoxMidStr='0 µm';
+BoxMidStr=[num2str(round(10*max(diam))/20), ' µm'];
 annotation('textbox',[LegendStart+.003, BoxChartMidY-.01, .06, .02],...
     'String', BoxMidStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'middle');
 
 
-BoxMinStr=[num2str(round(10*max(diam))/20), 'µm'];
+BoxMinStr='0 µm';
 annotation('textbox',[LegendStart+.003, BoxMinLine-.5*Cushion, .06, .02],...
     'String', BoxMinStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
-
-annotation('textbox',[0 BoxMinLine-.03 .06 .1],...
+%Distance from soma legend
+annotation('textbox',[0 BoxMinLine-.023 .06 .1],...
     'String', strcat(num2str(round(min(distance))), ' µm      from soma'),...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
-annotation('textbox',[LegendStart-.061 BoxMinLine-.03 .06 .1],...
+annotation('textbox',[LegendStart-.061 BoxMinLine-.023 .06 .1],...
     'String', strcat(num2str(round(max(distance))), ' µm from soma'),...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom',...
     'HorizontalAlignment', 'right');
 
 
-
+%Dendrite length legend
 dendriteLengthStart=.02;
-annotation('arrow', [dendriteLengthStart+.08 dendriteLengthStart+.25], [LineMaxLine+.02 LineMaxLine+.02])
+annotation('arrow', [dendriteLengthStart+.10 dendriteLengthStart+.25], [LineMaxLine+.02 LineMaxLine+.02])
 annotation('textbox',[dendriteLengthStart LineMaxLine+.01 .8 .04],...
     'String', 'Dendrite Length',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
-%annotation('textbox',[proximalDistalStart+.21 LineMaxLine+.01 .04 .04],...
-%    'String', 'Distal',...
-%    'LineStyle', 'none',...
-%    'VerticalAlignment', 'bottom');
-
-
-
-
 
 
 %Volt Line Chart%%%%%%%%%%%%%%%%%%
 
+%Max mV string
 LineMaxStr=[num2str(round(MaxVolt)), ' mV'];
 annotation('textbox',[LegendStart+.003, LineMaxLine-.5*Cushion-.005, .1, .05],...
     'String', LineMaxStr,...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
 
-
+%Min mV string
 LineMinStr=[num2str(round(MinVolt)) ' mV'];
 annotation('textbox',[LegendStart+.003, LineMinLine-.5*Cushion-.005, .1, .05],...
     'String', LineMinStr,...
@@ -448,12 +455,13 @@ annotation('line', [0 LegendStart], [LineMinLine LineMinLine],...
     'LineStyle', '--');
 
 
-annotation('line', [0 LegendStart], [LineZeroMv LineZeroMv],...
-    'LineStyle', '--');
+%0 mV String
 annotation('textbox',[LegendStart+.003, LineZeroMv-.01, .1, .05],...
     'String', '0 mV',...
     'LineStyle', 'none',...
     'VerticalAlignment', 'bottom');
+annotation('line', [0 LegendStart], [LineZeroMv LineZeroMv],...
+    'LineStyle', '--');
 
 
 
@@ -462,7 +470,7 @@ annotation('textbox',[LegendStart+.003, LineZeroMv-.01, .1, .05],...
 
 %Ion Bar chart%%%%%%%%%%%%%%%%%%%%%%%
 
-
+%currents tag
 annotation('textbox',[LegendStart+.012, BarChartMidY+.105, .049, .024],...
     'String', 'Currents',...
     'LineStyle', ':',...
@@ -554,12 +562,12 @@ annotation('textbox',[BoxX(4) BoxMinLine-.025 .05 .04],...
 
 
 
-caxis([-1*VoltageFloor VoltageCeiling]) 
+caxis([-1*VoltageFloor VoltageCeiling])
 cb=colorbar([LegendStart+.047 BoxMinLine .015 BoxMaxLine-BoxMinLine]);
- %set(cb, 'peer', gca, [LegendStart-.40 BoxMaxLine+.025 0.12 0.035]);
+%set(cb, 'peer', gca, [LegendStart-.40 BoxMaxLine+.025 0.12 0.035]);
 annotation('textbox', [LegendStart+.045 BoxMinLine-.04 .04 .04],...
-        'String', 'mV',...
-        'LineStyle', 'none');
+    'String', 'mV',...
+    'LineStyle', 'none');
 
 %Line Chart - Voltage string
 annotation('textarrow', [LegendStart+.01 LegendStart+.01], [LineChartMidY-.03 LineChartMidY+.03],...
@@ -604,17 +612,17 @@ while arrowloop<=maxcompart
     CapX(arrowloop)= BarX;
     BarX= BarX + BarWidth;
     
-    %Passive current 
+    %Passive current
     PasBarSize=min(MaxBar, BarZoom*AbsPas(arrowloop, CurrentTime));
     PasBar(arrowloop)=annotation('rectangle',...
         [BarX BarChartMidY-.0005 BarWidth PasBarSize],...
         'FaceColor',PasColor,...
         'LineWidth', .0005);
     PasX(arrowloop)=BarX;
-        BarX= BarX + BarWidth;
-
-        
-        
+    BarX= BarX + BarWidth;
+    
+    
+    
     %Potassium current
     PotassiumBarSize=min(MaxBar, BarZoom*AbsK(arrowloop, CurrentTime));
     PotassiumBar(arrowloop)=annotation('rectangle',...
@@ -623,7 +631,7 @@ while arrowloop<=maxcompart
         'LineWidth', .0005);
     PotassiumX(arrowloop)= BarX;
     BarX=BarX+BarWidth;
-        
+    
     %Sodium
     SodiumBarSize=min(MaxBar, BarZoom*AbsNa(arrowloop, CurrentTime));
     SodiumBar(arrowloop)=annotation('rectangle', ... #x, y, width, height ; preallocating makes no speed difference
@@ -649,7 +657,7 @@ while arrowloop<=maxcompart
     AMPAX(arrowloop)= BarX;
     BarX=BarX+BarWidth;
     
-    %NMDA current    
+    %NMDA current
     NMDABarSize=min(MaxBar, BarZoom*AbsNMDA(arrowloop, CurrentTime));
     NMDABar(arrowloop)=annotation('rectangle',...
         [BarX BarChartMidY-NMDABarSize BarWidth NMDABarSize],...
@@ -682,14 +690,19 @@ while arrowloop<=maxcompart
     
     %Current Input Indicator
     if(arrowloop==InputCompartment)
-    annotation('arrow', [BoxX(InputCompartment)+.5*BoxX(2) BoxX(InputCompartment)+.5*BoxX(2)],...
+        annotation('arrow', [BoxX(InputCompartment)+.5*BoxX(2) BoxX(InputCompartment)+.5*BoxX(2)],...
             [BoxChartMidY+.5*BoxSize+.018 BoxChartMidY+.5*BoxSize+.019],...
             'HeadStyle', 'plain',...
             'HeadWidth', 15,...
             'HeadLength', 15,...
             'Color', InputColor);
-    annotation('line', [BoxX(InputCompartment)+.5*BoxX(2) BoxX(InputCompartment)+.5*BoxX(2)],...
-                [BoxChartMidY+.5*BoxSize+.06 BoxChartMidY+.5*BoxSize+.02]);
+        annotation('line', [BoxX(InputCompartment)+.5*BoxX(2) BoxX(InputCompartment)+.5*BoxX(2)],...
+            [BoxChartMidY+.5*BoxSize+.06 BoxChartMidY+.5*BoxSize+.02]);
+    annotation('textbox',[BoxX(InputCompartment)+.5*BoxX(2)+.002 BoxChartMidY+.5*BoxSize+.025 .05 .05],...
+        'String', 'Input',...
+   'LineStyle', 'none',...
+    'VerticalAlignment', 'middle',...
+    'FontWeight', 'normal');
     end
     
     %Axial current
@@ -702,44 +715,44 @@ while arrowloop<=maxcompart
         'FaceColor', [.2 .1 .1]);
     
     
- %Line Chart
- if(arrowloop==maxcompart)
-     
-    VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop)+.5*BoxX(2) (BoxX(arrowloop)+SpaceConstant)], [.2 .2],...
-                'Color', [.5 .2 1],...
-                'LineWidth', 2);
- 
- else
-    VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop)+.5*BoxX(2) (BoxX(arrowloop)+.5*BoxX(2)+SpaceConstant)], [.2 .2],...
-                'Color', [.5 .2 1],...
-                'LineWidth', 2);
- end     
+    %Line Chart
+    if(arrowloop==maxcompart)
         
+        VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop)+.5*BoxX(2) (BoxX(arrowloop)+SpaceConstant)], [.2 .2],...
+            'Color', [.5 .2 1],...
+            'LineWidth', 2);
+        
+    else
+        VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop)+.5*BoxX(2) (BoxX(arrowloop)+.5*BoxX(2)+SpaceConstant)], [.2 .2],...
+            'Color', [.5 .2 1],...
+            'LineWidth', 2);
+    end
+    
     
     
     %Vertical dotted lines
     annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [BoxFromBot+BoxSize BoxMaxLine], ...
-               'LineStyle', ':',...
-               'LineWidth', .1);
+        'LineStyle', ':',...
+        'LineWidth', .1);
     annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [BoxFromBot BoxMinLine], ...
-               'LineStyle', ':',...
-               'LineWidth', .1);
+        'LineStyle', ':',...
+        'LineWidth', .1);
     
     annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [BarMaxLine BarMinLine], ...
-               'LineStyle', ':',...
-               'LineWidth', .1);       
+        'LineStyle', ':',...
+        'LineWidth', .1);
     
     annotation('line', [BoxX(arrowloop) BoxX(arrowloop)], [LineMaxLine LineMinLine], ...
-               'LineStyle', ':',...
-               'LineWidth', .1);  
-           
-           
-   arrowloop=arrowloop+LoopAdd;      
+        'LineStyle', ':',...
+        'LineWidth', .1);
+    
+    
+    arrowloop=arrowloop+LoopAdd;
 end
 
-   ExtendVoltLine=annotation('line', [BoxX(1) BoxX(1)+.5*BoxX(2)], [.2 .2],...
-                'Color', [.5 .2 1],...
-                'LineWidth', 2);    
+ExtendVoltLine=annotation('line', [BoxX(1) BoxX(1)+.5*BoxX(2)], [.2 .2],...
+    'Color', [.5 .2 1],...
+    'LineWidth', 2);
 
 
 if recordmovie==true
@@ -755,7 +768,7 @@ while CurrentTime<EndTime && continued==true  %maxtime
     
     str3=['TIME: ',num2str(CurrentTime/10),'ms'];
     
-set(TimeDisplay, 'String', str3) %(closing window midway causes program to end here, no problem)
+    set(TimeDisplay, 'String', str3) %(closing window midway causes program to end here, no problem)
     arrowloop=1;
     while arrowloop<=maxcompart
         
@@ -796,7 +809,7 @@ set(TimeDisplay, 'String', str3) %(closing window midway causes program to end h
         
         
         %Bar Chart
-        ColorNumber=ceil(volt(arrowloop,CurrentTime))+VoltageFloor; 
+        ColorNumber=ceil(volt(arrowloop,CurrentTime))+VoltageFloor;
         BarColor=[boxcolormap(ColorNumber,1) boxcolormap(ColorNumber,2) boxcolormap(ColorNumber,3)];
         
         set(DiamBar(arrowloop),'FaceColor',BarColor);
@@ -817,23 +830,23 @@ set(TimeDisplay, 'String', str3) %(closing window midway causes program to end h
         
         VLY1=VoltScaler*volt(arrowloop,CurrentTime);
         if arrowloop~=maxcompart
-        VLY2=VoltScaler*volt(arrowloop+1,CurrentTime);
+            VLY2=VoltScaler*volt(arrowloop+1,CurrentTime);
         end
         VoltLineY= [(VLY1+LineZeroMv) (VLY2+LineZeroMv)];
         set(VoltLine(arrowloop),'Y', VoltLineY);
-
+        
         if(arrowloop==1)
-        VLY3= VLY1 - (VLY2-VLY1)/2;
-        ExtendVoltLineY=[VLY3+LineZeroMv (VLY1+LineZeroMv)];
-          set(ExtendVoltLine,'Y', ExtendVoltLineY);
+            VLY3= VLY1 - (VLY2-VLY1)/2;
+            ExtendVoltLineY=[VLY3+LineZeroMv (VLY1+LineZeroMv)];
+            set(ExtendVoltLine,'Y', ExtendVoltLineY);
         end
         
         %Contextual charts
         PlotScaledTime=CurrentTime-StartTime;
-              
+        
         SomaY=voltI(CurrentTime, 1) * PlotYScalar;
         SelectedY=voltI(CurrentTime, SelectedCompartment) * PlotYScalar;
-
+        
         
         
         set(SomaPlotLine1, 'X', [PlotLineXScalar*PlotScaledTime+PlotX-.0025 PlotLineXScalar*PlotScaledTime+PlotX+.0025],...
@@ -845,17 +858,17 @@ set(TimeDisplay, 'String', str3) %(closing window midway causes program to end h
         
         set(SelectedPlotLine1, 'X', [PlotLineXScalar*PlotScaledTime+PlotX-.0025 PlotLineXScalar*PlotScaledTime+PlotX+.0025],...
             'Y', [SelectedY+SelectedPlotZeroMv SelectedY+SelectedPlotZeroMv]);
-                
+        
         set(SelectedPlotLine2, 'X', [PlotLineXScalar*PlotScaledTime+PlotX PlotLineXScalar*PlotScaledTime+PlotX],...
             'Y', [SelectedY+SelectedPlotZeroMv-.005 SelectedY+SelectedPlotZeroMv+.005]);
-
         
-        arrowloop=arrowloop+LoopAdd; 
+        
+        arrowloop=arrowloop+LoopAdd;
         
         
     end
     
- 
+    
     
     drawnow;
     if recordmovie==true
