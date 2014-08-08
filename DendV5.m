@@ -716,14 +716,20 @@ while arrowloop<=maxcompart
     
     
     %Line Chart
-    if(arrowloop==maxcompart)
+    if(arrowloop==1)
         
-        VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop)+.5*BoxX(2) (BoxX(arrowloop)+SpaceConstant)], [.2 .2],...
+        VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop) (BoxX(arrowloop)+.5*BoxX(2))], [.2 .2],...
+            'Color', [.5 .2 1],...
+            'LineWidth', 2);
+    elseif(arrowloop==maxcompart)
+        VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop)-.5*BoxX(2) (BoxX(arrowloop)+.5*BoxX(2))], [.2 .2],...
             'Color', [.5 .2 1],...
             'LineWidth', 2);
         
+        
     else
-        VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop)+.5*BoxX(2) (BoxX(arrowloop)+.5*BoxX(2)+SpaceConstant)], [.2 .2],...
+            
+        VoltLine(arrowloop)=annotation('line', [BoxX(arrowloop)-.5*BoxX(2) (BoxX(arrowloop)-.5*BoxX(2)+SpaceConstant)], [.2 .2],...
             'Color', [.5 .2 1],...
             'LineWidth', 2);
     end
@@ -750,7 +756,7 @@ while arrowloop<=maxcompart
     arrowloop=arrowloop+LoopAdd;
 end
 
-ExtendVoltLine=annotation('line', [BoxX(1) BoxX(1)+.5*BoxX(2)], [.2 .2],...
+ExtendVoltLine=annotation('line', [BoxX(maxcompart)+.5*BoxX(2) BoxX(maxcompart)+SpaceConstant], [.2 .2],...
     'Color', [.5 .2 1],...
     'LineWidth', 2);
 
@@ -829,13 +835,13 @@ while CurrentTime<EndTime && continued==true  %maxtime
         %Line chart
         
         VLY1=VoltScaler*volt(arrowloop,CurrentTime);
-        if arrowloop~=maxcompart
+        if arrowloop~=maxcompart %Is not equal to
             VLY2=VoltScaler*volt(arrowloop+1,CurrentTime);
         end
         VoltLineY= [(VLY1+LineZeroMv) (VLY2+LineZeroMv)];
         set(VoltLine(arrowloop),'Y', VoltLineY);
         
-        if(arrowloop==1)
+        if(arrowloop==maxcompart)
             VLY3= VLY1 - (VLY2-VLY1)/2;
             ExtendVoltLineY=[VLY3+LineZeroMv (VLY1+LineZeroMv)];
             set(ExtendVoltLine,'Y', ExtendVoltLineY);
